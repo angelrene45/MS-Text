@@ -1,0 +1,37 @@
+import React from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+function Login() {
+  const handleLogin = (e) => {
+    e.preventDefault();
+    // Aquí manejarías el inicio de sesión
+    console.log('Login attempt');
+  };
+
+  return (
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-body">
+              <h3 className="card-title text-center">Single sign-on to Morgan Stanley EMU</h3>
+              <p className="text-center">Authenticate your account by logging into Morgan Stanley EMU's single sign-on provider.</p>
+              <form onSubmit={handleLogin}>
+                <div className="form-group">
+                  {/* Aquí irían los campos del formulario si los necesitas */}
+                </div>
+                <button type="submit" className="btn btn-success btn-block">Continue</button>
+              </form>
+            </div>
+          </div>
+          <div className="text-center mt-3">
+            {/* Enlaces o información adicional */}
+            <a href="/terms">Terms</a> | <a href="/privacy">Privacy</a> | <a href="/docs">Docs</a> | <a href="#" onClick={() => console.log('Contact support')}>Contact GitHub Support</a> | <a href="#" onClick={() => console.log('Manage cookies')}>Manage cookies</a> | <a href="#" onClick={() => console.log('Do not share my personal information')}>Do not share my personal information</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Login;
