@@ -1,10 +1,21 @@
-The APIClient class provides functionality to perform API requests either asynchronously or synchronously, based on the use_async parameter. This flexibility allows you to optimize your application's performance and resource usage according to your specific needs.
-
-Features:
-
-Asynchronous Requests: By setting use_async to True, API requests are made concurrently using Python's asyncio library, allowing high throughput and efficient resource utilization. The max_concurrent_requests parameter controls the maximum number of concurrent requests, preventing system overload and managing resource consumption effectively.
-Synchronous Requests: By setting use_async to False, API requests are made sequentially in a blocking manner. This mode is simpler and may be more suitable for applications with lower concurrency requirements.
-Usage:
-
-max_concurrent_requests: This parameter defines the maximum number of API requests that can be executed concurrently when operating in asynchronous mode. It helps in throttling the requests to avoid overwhelming the server or consuming excessive system resources. A typical starting value is 100. However, the optimal number can vary depending on factors such as network latency, server capacity, and system resources. Users should experiment with different values to find the best performance for their specific use case. Monitoring and logging tools can assist in identifying bottlenecks and adjusting the max_concurrent_requests value accordingly.
-use_async: This boolean parameter determines whether the API requests should be executed asynchronously (True) or synchronously (False).
+1. Data Pull Module
+Checksum validation (data/file integrity).
+Verification of the number of records extracted against the expected count.
+Data integrity check during extraction (e.g., validation of required fields).
+2. Polling Module
+File size comparison before and after transfer.
+Line count validation between the original file and the file in the stage.
+Integrity check of file names and directory structures.
+3. StgLoad Module
+Data type validation before loading into target tables.
+Primary key uniqueness verification to prevent duplicates.
+Consistency check of file formats and delimiters before loading.
+4. Transformation Module
+Referential integrity checks between primary and foreign keys.
+Aggregate validation (totals, sums) to ensure they match the original data.
+Completeness verification of transformations (ensuring all data was transformed correctly).
+5. Data Downstream Module
+Consistency check between upstream and downstream data.
+Validation of the format and structure of files generated for downstream consumption.
+Verification of the exact match between transformed data and the data sent to other systems.
+This list provides a general framework for implementing data integrity checks at each stage of your ETL process.
