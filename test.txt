@@ -1,6 +1,11 @@
-The Polling module is responsible for processing files from a Network File System (NFS) and uploading them to Snowflake's internal stages using the PUT command. This module ensures that the files are correctly transferred and ready for subsequent loading into Snowflake tables.
 
-File Transfer Integrity: Verifies that files are transferred completely and without corruption by comparing file sizes before and after transfer.
-Line Count Verification: Ensures the number of lines in the file post-transfer matches the original, confirming data integrity.
-Error Handling and Retries: Automatically retries failed transfers and logs detailed error information to ensure successful file uploads.
-File Splitting Management: Handles large files by splitting them into smaller parts if needed, ensuring all parts are correctly uploaded.
+For the Transformation module, where SQL files contain the transformations, you can describe the data integrity checks as follows:
+
+Transformation Module
+Purpose: The Transformation module is responsible for executing SQL transformations provided in SQL files. This module ensures that the transformations are applied correctly and that the resulting data maintains integrity.
+Key Features:
+Syntax Validation: Validates the SQL syntax in the provided files before execution to prevent errors during the transformation process.
+Referential Integrity Checks: Ensures that foreign key relationships are preserved and valid after transformations are applied.
+Data Consistency Validation: Verifies that transformed data maintains consistency, such as matching record counts or aggregations, with the source data.
+Execution Logging: Logs the status of each SQL query, including execution time, success or failure, and any error messages, to track the integrity and performance of transformations.
+Transaction Management: Uses transactions to ensure that either all transformations are applied successfully or none, preventing partial updates that could lead to data inconsistencies.
