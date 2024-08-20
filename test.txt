@@ -1,8 +1,6 @@
-Purpose: The StgLoad module is responsible for loading data from internal stages into Snowflake tables. This module leverages Snowflake's COPY command to ensure efficient and reliable data transfer.
-Key Features:
-Data Type Validation: Ensures that the data being loaded matches the expected data types in the target table columns, preventing type mismatches.
-NULL Constraints Enforcement: Respects the NOT NULL constraints in the target table, ensuring that no NULL values are inserted where they are not allowed.
-Column Count Verification: Confirms that the number of columns in the source files matches the table's schema, avoiding errors due to mismatched column counts.
-Primary Key and Uniqueness Checks: If primary key or unique constraints are defined on the target table, the module ensures that no duplicate values are inserted, maintaining data integrity.
-Error Handling and Rejection Thresholds: Allows for configurable error thresholds, aborting the load operation if the number of rejected rows exceeds the specified limit, ensuring that only clean and valid data is loaded.
-File Consistency and Parsing Validation: Verifies that the data files conform to the expected format and can be parsed correctly, rejecting rows with format or parsing errors.
+The Polling module is responsible for processing files from a Network File System (NFS) and uploading them to Snowflake's internal stages using the PUT command. This module ensures that the files are correctly transferred and ready for subsequent loading into Snowflake tables.
+
+File Transfer Integrity: Verifies that files are transferred completely and without corruption by comparing file sizes before and after transfer.
+Line Count Verification: Ensures the number of lines in the file post-transfer matches the original, confirming data integrity.
+Error Handling and Retries: Automatically retries failed transfers and logs detailed error information to ensure successful file uploads.
+File Splitting Management: Handles large files by splitting them into smaller parts if needed, ensuring all parts are correctly uploaded.
