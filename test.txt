@@ -1,11 +1,16 @@
-
-For the Transformation module, where SQL files contain the transformations, you can describe the data integrity checks as follows:
-
-Transformation Module
-Purpose: The Transformation module is responsible for executing SQL transformations provided in SQL files. This module ensures that the transformations are applied correctly and that the resulting data maintains integrity.
+DataPull Module
+Purpose: The DataPull module is responsible for extracting data from various sources (e.g., Web APIs, Sybase, DB2, Salesforce) and loading it into Snowflake. This module ensures that the data is accurately and reliably extracted and transferred.
 Key Features:
-Syntax Validation: Validates the SQL syntax in the provided files before execution to prevent errors during the transformation process.
-Referential Integrity Checks: Ensures that foreign key relationships are preserved and valid after transformations are applied.
-Data Consistency Validation: Verifies that transformed data maintains consistency, such as matching record counts or aggregations, with the source data.
-Execution Logging: Logs the status of each SQL query, including execution time, success or failure, and any error messages, to track the integrity and performance of transformations.
-Transaction Management: Uses transactions to ensure that either all transformations are applied successfully or none, preventing partial updates that could lead to data inconsistencies.
+Source Data Validation: Verifies the integrity of the data in the source systems before extraction, including checks on data completeness and accuracy.
+Checksum and Record Count Validation: Compares checksums and record counts before and after extraction to ensure no data corruption or loss occurs during the process.
+Data Type Consistency: Ensures that the data types in the source match the expected types in Snowflake, preventing type mismatch errors during load.
+Performance and Resource Monitoring: Logs resource usage and performance metrics during extraction to detect any anomalies that could impact data integrity.
+Error Handling and Recovery: Implements robust error handling and recovery mechanisms to manage any issues during data extraction, ensuring that the process completes successfully without data loss.
+DataDownstream Module
+Purpose: The DataDownstream module handles the process of exporting data from Snowflake and pushing it to downstream systems or generating files for consumption by other systems. This module ensures that the data is correctly formatted and consistent throughout the process.
+Key Features:
+Data Consistency Checks: Verifies that the data exported from Snowflake is consistent with the transformed data, ensuring no discrepancies between the source and downstream systems.
+File Format Validation: Ensures that the generated files meet the required format and structure specifications, preventing issues during downstream consumption.
+Data Integrity Validation: Confirms that all data intended for downstream systems is accurately transferred, with no missing or extra records.
+Error Handling and Notifications: Captures and logs any errors during the export process and provides notifications to ensure timely correction of issues.
+Destination System Validation: Checks that the data received by downstream systems is complete and unaltered, ensuring successful integration.
