@@ -33,3 +33,13 @@ Polling: Processes and uploads files from NFS to Snowflake, ensuring file integr
 StgLoad: Loads data into Snowflake tables using COPY, with built-in data validation and logging.
 Transformation: Executes SQL transformations with syntax validation, referential integrity, and transaction management.
 Data Downstream: Exports data from Snowflake to downstream systems, ensuring consistency and format validation.
+
+
+
+
+
+
+Slide: Quality Assurance and Security
+Test Coverage: Comprehensive automated test coverage with 83% overall code coverage, ensuring reliability and functionality.
+SonarQube Integration: Continuous code quality analysis with SonarQube, identifying bugs, code smells, and vulnerabilities.
+Snyk for Security: Integrated with Snyk to detect and fix vulnerabilities in dependencies, ensuring a secure codebase.
