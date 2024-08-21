@@ -1,1 +1,35 @@
-The Transformit library is a comprehensive ETL (Extract, Transform, Load) solution designed to manage data movement and transformation across various platforms, ensuring data integrity and consistency throughout the process. The library is composed of five key modules, each handling a specific stage of the ETL workflow:
+Transformit UI
+Config Tables:
+
+Intuitive interface for managing and entering configuration data.
+Provides a visual representation of markdown documents related to your processes for easy access and reference.
+Performance Dashboard:
+
+A centralized dashboard for real-time monitoring of ETL jobs.
+Offers detailed analytics on process performance, allowing users to quickly assess job statuses and identify bottlenecks.
+Facilitates proactive management of ETL workflows by providing insights into job execution and efficiency.
+Data Lineage (In Development):
+
+This feature is currently under development.
+Will offer a graphical representation of data flow from source to target, making it easier to trace data origins and understand the impact of changes.
+Aims to enhance visibility into how data transformations affect downstream processes and systems.
+
+
+
+Observability
+Comprehensive Monitoring:
+
+Provides in-depth tracing of resource usage, data loading operations, status updates, and transformations throughout the ETL pipeline.
+Integrated with OpenTelemetry to deliver advanced monitoring capabilities, ensuring full pipeline visibility and enabling swift issue detection and resolution.
+Current Implementation:
+
+Non-Prod Environment: Observability features are fully implemented, providing detailed monitoring and diagnostics during development and testing phases.
+Production Environment: Implementation for production environments is planned for the near future, ensuring that the same level of observability will be extended to live operations.
+
+
+Transformit Lib
+Data Pull: Extracts data from various sources (APIs, databases, etc.) into Snowflake with integrity checks like checksum validation and record count verification.
+Polling: Processes and uploads files from NFS to Snowflake, ensuring file integrity and detailed logging.
+StgLoad: Loads data into Snowflake tables using COPY, with built-in data validation and logging.
+Transformation: Executes SQL transformations with syntax validation, referential integrity, and transaction management.
+Data Downstream: Exports data from Snowflake to downstream systems, ensuring consistency and format validation.
