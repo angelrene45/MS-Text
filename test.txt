@@ -6,3 +6,10 @@ TRIM(
     NVL(TEL_NUMBER, '') || 
     NVL2(TEL_EXTENSION, ' ' || '(' || TEL_EXTENSION || ')', '')
 )
+
+
+TRIM(
+    NVL(FAX_CTRY_CODE, '') || 
+    NVL2(FAX_AREA_CODE, ' (' || FAX_AREA_CODE || ')', '') || 
+    NVL(FAX_NUMBER, '')
+)
