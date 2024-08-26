@@ -1,15 +1,5 @@
-SDLC Level 3: Transformit Lib adheres to SDLC Level 3, ensuring a structured and well-documented development process with defined phases and quality gates.
-
 TRIM(
-    NVL(TEL_CTRY_CODE, '') || 
-    NVL2(TEL_AREA_CODE, ' (' || TEL_AREA_CODE || ')', '') || 
-    NVL(TEL_NUMBER, '') || 
-    NVL2(TEL_EXTENSION, ' ' || '(' || TEL_EXTENSION || ')', '')
-)
-
-
-TRIM(
-    NVL(FAX_CTRY_CODE, '') || 
-    NVL2(FAX_AREA_CODE, ' (' || FAX_AREA_CODE || ')', '') || 
-    NVL(FAX_NUMBER, '')
+    NVL(ADDR1, '') || 
+    NVL2(ADDR2, ', ' || ADDR2, '') || 
+    NVL2(ADDR3, ', ' || ADDR3, '')
 )
