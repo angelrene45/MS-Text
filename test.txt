@@ -26,16 +26,21 @@ MEMORY_THRESHOLD = 80  # Memory usage percentage
 BYTES_SENT_THRESHOLD = 1000000  # Network bytes sent per second (1 MB)
 BYTES_RECV_THRESHOLD = 1000000  # Network bytes received per second (1 MB)
 
-def log_high_usage_processes(span):
-    """Logs information about processes consuming high resources."""
-    for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
-        if proc.info['cpu_percent'] > CPU_THRESHOLD or proc.info['memory_percent'] > MEMORY_THRESHOLD:
-            span.add_event("high_resource_usage", {
-                "process.pid": proc.info['pid'],
-                "process.name": proc.info['name'],
-                "process.cpu_percent": proc.info['cpu_percent'],
-                "process.memory_percent": proc.info['memory_percent']
-            })
+def log_top_processes(span):
+    """Logs the top processes consuming the most resources."""
+    top_processes = sorted(psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']),
+                           key=lambda p: p.info['cpu_percent'] + p.info['memory_percent'], reverse=True)[:10]
+    
+    for proc in top_processes:
+        span.add_event("top_process", {
+            "process.pid": proc.info['pid'],
+            "process.name": proc.info['name'],
+            "process.cpu_percent": proc.info['cpu_percent'],
+            "process.memory_percent": proc.info['memory_percent'],
+            "process.status": proc.status(),
+            "process.create_time": proc.create_time(),
+            "process.threads": proc.num_threads()
+        })
 
 def monitor_resources():
     while True:
@@ -62,7 +67,7 @@ def monitor_resources():
                     "cpu.usage_percent": cpu_usage,
                     "memory.usage_percent": memory_info.percent
                 })
-                log_high_usage_processes(span)
+                log_top_processes(span)
 
             # Check for high network usage
             if net_io.bytes_sent > BYTES_SENT_THRESHOLD or net_io.bytes_recv > BYTES_RECV_THRESHOLD:
@@ -70,6 +75,7 @@ def monitor_resources():
                     "network.bytes_sent": net_io.bytes_sent,
                     "network.bytes_recv": net_io.bytes_recv
                 })
+                log_top_processes(span)
 
             # Local output for monitoring
             print(f"CPU Usage: {cpu_usage}%")
