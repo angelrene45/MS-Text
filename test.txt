@@ -7,7 +7,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
 
-# Configurar OpenTelemetry con mejores prácticas
+# Configure OpenTelemetry with best practices
 resource = Resource.create({
     "service.name": "resource-monitor",
     "host.name": os.uname().nodename
@@ -20,12 +20,14 @@ provider.add_span_processor(span_processor)
 trace.set_tracer_provider(provider)
 tracer = trace.get_tracer(__name__)
 
-# Umbrales para alertas de alto consumo
-CPU_THRESHOLD = 80  # porcentaje de uso de CPU
-MEMORY_THRESHOLD = 80  # porcentaje de uso de Memoria
+# Thresholds for resource usage
+CPU_THRESHOLD = 80  # CPU usage percentage
+MEMORY_THRESHOLD = 80  # Memory usage percentage
+BYTES_SENT_THRESHOLD = 1000000  # Network bytes sent per second (1 MB)
+BYTES_RECV_THRESHOLD = 1000000  # Network bytes received per second (1 MB)
 
 def log_high_usage_processes(span):
-    """Registra información de procesos con alto consumo de recursos."""
+    """Logs information about processes consuming high resources."""
     for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
         if proc.info['cpu_percent'] > CPU_THRESHOLD or proc.info['memory_percent'] > MEMORY_THRESHOLD:
             span.add_event("high_resource_usage", {
@@ -38,23 +40,23 @@ def log_high_usage_processes(span):
 def monitor_resources():
     while True:
         with tracer.start_as_current_span("resource_monitoring") as span:
-            # Monitoreo de uso de CPU
+            # CPU usage monitoring
             cpu_usage = psutil.cpu_percent(interval=1)
             span.set_attribute("cpu.usage_percent", cpu_usage)
 
-            # Monitoreo de uso de Memoria
+            # Memory usage monitoring
             memory_info = psutil.virtual_memory()
             span.set_attribute("memory.total", memory_info.total)
             span.set_attribute("memory.available", memory_info.available)
             span.set_attribute("memory.used", memory_info.used)
             span.set_attribute("memory.usage_percent", memory_info.percent)
 
-            # Monitoreo de uso de Red
+            # Network usage monitoring
             net_io = psutil.net_io_counters()
             span.set_attribute("network.bytes_sent", net_io.bytes_sent)
             span.set_attribute("network.bytes_recv", net_io.bytes_recv)
 
-            # Verificar alto uso de recursos
+            # Check for high resource usage
             if cpu_usage > CPU_THRESHOLD or memory_info.percent > MEMORY_THRESHOLD:
                 span.add_event("high_resource_usage_alert", {
                     "cpu.usage_percent": cpu_usage,
@@ -62,12 +64,19 @@ def monitor_resources():
                 })
                 log_high_usage_processes(span)
 
-            # Salida en consola para monitoreo local
+            # Check for high network usage
+            if net_io.bytes_sent > BYTES_SENT_THRESHOLD or net_io.bytes_recv > BYTES_RECV_THRESHOLD:
+                span.add_event("high_network_usage_alert", {
+                    "network.bytes_sent": net_io.bytes_sent,
+                    "network.bytes_recv": net_io.bytes_recv
+                })
+
+            # Local output for monitoring
             print(f"CPU Usage: {cpu_usage}%")
             print(f"Memory Usage: {memory_info.percent}%")
             print(f"Network - Bytes Sent: {net_io.bytes_sent}, Bytes Received: {net_io.bytes_recv}")
 
-            # Dormir por un intervalo de tiempo
+            # Sleep for a defined interval
             time.sleep(10)
 
 if __name__ == "__main__":
