@@ -30,6 +30,7 @@ total_memory_usage = Gauge('total_memory_usage_percent', 'Total Memory usage per
 
 # Set the memory usage threshold to trigger tracing of processes
 THRESHOLD = 70  # 70% memory usage threshold
+TOP_N = 5  # Set the top N processes to capture
 
 # Function to monitor system memory usage and update Prometheus metrics
 def monitor_memory():
@@ -41,39 +42,42 @@ def monitor_memory():
     # Log total memory usage
     logger.info(f"Total memory usage: {total_memory}%")
 
-    # If memory usage exceeds the threshold, capture detailed process information
+    # If memory usage exceeds the threshold, capture top N process information
     if total_memory > THRESHOLD:
         logger.warning(f"Memory usage exceeded {THRESHOLD}% threshold: {total_memory}%")
         create_process_events()
 
-# Function to capture detailed information about processes consuming significant memory
+# Function to capture top N processes consuming the most memory
 def create_process_events():
-    logger.info("Capturing process details for processes consuming high memory...")
-    for proc in psutil.process_iter(['pid', 'name', 'memory_percent', 'cmdline', 'num_threads', 'status']):
+    logger.info(f"Capturing top {TOP_N} memory-consuming processes...")
+    
+    # Get all processes sorted by memory usage, and take the top N
+    processes = sorted(psutil.process_iter(['pid', 'name', 'memory_percent', 'cmdline', 'num_threads', 'status']),
+                       key=lambda p: p.info['memory_percent'], reverse=True)[:TOP_N]
+
+    for proc in processes:
         try:
-            # Only capture processes using memory
-            if proc.info['memory_percent'] > 0:
-                with tracer.start_as_current_span(f"High Memory Process: {proc.info['name']}") as span:
-                    # Capture detailed process attributes for analysis
-                    span.set_attribute("pid", proc.info['pid'])
-                    span.set_attribute("name", proc.info['name'])
-                    span.set_attribute("memory_usage", proc.info['memory_percent'])
-                    span.set_attribute("command_line", ' '.join(proc.info['cmdline']) if proc.info['cmdline'] else 'N/A')
-                    span.set_attribute("num_threads", proc.info['num_threads'])
-                    span.set_attribute("status", proc.info['status'])
+            with tracer.start_as_current_span(f"High Memory Process: {proc.info['name']}") as span:
+                # Capture detailed process attributes for analysis
+                span.set_attribute("pid", proc.info['pid'])
+                span.set_attribute("name", proc.info['name'])
+                span.set_attribute("memory_usage", proc.info['memory_percent'])
+                span.set_attribute("command_line", ' '.join(proc.info['cmdline']) if proc.info['cmdline'] else 'N/A')
+                span.set_attribute("num_threads", proc.info['num_threads'])
+                span.set_attribute("status", proc.info['status'])
 
-                    # Log detailed process information
-                    logger.info(f"Process {proc.info['name']} (PID: {proc.info['pid']}) is using {proc.info['memory_percent']}% memory")
-                    logger.info(f"Command line: {' '.join(proc.info['cmdline']) if proc.info['cmdline'] else 'N/A'}")
-                    logger.info(f"Threads: {proc.info['num_threads']}, Status: {proc.info['status']}")
+                # Log detailed process information
+                logger.info(f"Process {proc.info['name']} (PID: {proc.info['pid']}) is using {proc.info['memory_percent']}% memory")
+                logger.info(f"Command line: {' '.join(proc.info['cmdline']) if proc.info['cmdline'] else 'N/A'}")
+                logger.info(f"Threads: {proc.info['num_threads']}, Status: {proc.info['status']}")
 
-                    # Add an event indicating the process exceeded the memory threshold
-                    span.add_event("Process exceeds memory threshold")
+                # Add an event indicating the process exceeded the memory threshold
+                span.add_event("Process exceeds memory threshold")
 
-                    # Additional warning if memory usage exceeds 90%
-                    if proc.info['memory_percent'] > 90:
-                        logger.warning(f"Process {proc.info['name']} (PID: {proc.info['pid']}) is using more than 90% memory!")
-                        span.set_status("Warning: Memory usage > 90%")
+                # Additional warning if memory usage exceeds 90%
+                if proc.info['memory_percent'] > 90:
+                    logger.warning(f"Process {proc.info['name']} (PID: {proc.info['pid']}) is using more than 90% memory!")
+                    span.set_status("Warning: Memory usage > 90%")
                         
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             # Skip processes that are inaccessible or have ended, and log this event
