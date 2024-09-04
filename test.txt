@@ -28,8 +28,10 @@ trace.get_tracer_provider().add_span_processor(span_processor)
 # Prometheus metric for total memory usage
 total_memory_usage = Gauge('total_memory_usage_percent', 'Total Memory usage percentage')
 
-# Set the memory usage threshold to trigger tracing of processes
-THRESHOLD = 70  # 70% memory usage threshold
+# Set memory usage thresholds for different levels of alerts
+LOW_THRESHOLD = 70  # 70% memory usage - initial threshold
+HIGH_THRESHOLD = 85  # 85% memory usage - higher threshold
+CRITICAL_THRESHOLD = 90  # 90% memory usage - critical threshold
 TOP_N = 5  # Set the top N processes to capture
 
 # Dictionary to track processes that have already been traced
@@ -48,59 +50,64 @@ def monitor_memory():
     # Log total memory usage
     logger.info(f"Total memory usage: {total_memory}%")
 
-    # If memory usage exceeds the threshold, capture top N process information
-    if total_memory > THRESHOLD:
-        logger.warning(f"Memory usage exceeded {THRESHOLD}% threshold: {total_memory}%")
-        create_process_events()
+    # Capture top N process information based on different thresholds
+    if total_memory > CRITICAL_THRESHOLD:
+        logger.critical(f"Memory usage exceeded {CRITICAL_THRESHOLD}%: {total_memory}%")
+        create_aggregated_trace(CRITICAL_THRESHOLD)
+    elif total_memory > HIGH_THRESHOLD:
+        logger.warning(f"Memory usage exceeded {HIGH_THRESHOLD}%: {total_memory}%")
+        create_aggregated_trace(HIGH_THRESHOLD)
+    elif total_memory > LOW_THRESHOLD:
+        logger.info(f"Memory usage exceeded {LOW_THRESHOLD}%: {total_memory}%")
+        create_aggregated_trace(LOW_THRESHOLD)
 
-# Function to capture top N processes consuming the most memory
-def create_process_events():
-    logger.info(f"Capturing top {TOP_N} memory-consuming processes...")
-    
+# Function to create an aggregated trace for processes above the memory threshold
+def create_aggregated_trace(threshold):
+    logger.info(f"Capturing top {TOP_N} processes with memory usage above {threshold}%...")
+
     # Get all processes sorted by memory usage, and take the top N
     processes = sorted(psutil.process_iter(['pid', 'name', 'memory_percent', 'cmdline', 'num_threads', 'status']),
                        key=lambda p: p.info['memory_percent'], reverse=True)[:TOP_N]
 
+    # Collect the processes that exceed the threshold and haven't been traced recently
+    processes_above_threshold = []
+    current_time = time.time()
+
     for proc in processes:
         try:
-            current_time = time.time()
             pid = proc.info['pid']
             memory_usage = proc.info['memory_percent']
 
-            # Only trace if the process hasn't been traced recently or if the memory usage increased significantly
+            # Only trace if the process hasn't been traced recently or if memory usage increased significantly
             if (pid not in traced_processes or 
                 (current_time - traced_processes[pid]['last_traced'] > REFRESH_INTERVAL) or 
                 (memory_usage > traced_processes[pid]['memory_usage'] * 1.1)):  # Check for 10% increase in memory usage
-                
-                with tracer.start_as_current_span(f"High Memory Process: {proc.info['name']}") as span:
-                    # Capture detailed process attributes for analysis
-                    span.set_attribute("pid", proc.info['pid'])
-                    span.set_attribute("name", proc.info['name'])
-                    span.set_attribute("memory_usage", proc.info['memory_percent'])
-                    span.set_attribute("command_line", ' '.join(proc.info['cmdline']) if proc.info['cmdline'] else 'N/A')
-                    span.set_attribute("num_threads", proc.info['num_threads'])
-                    span.set_attribute("status", proc.info['status'])
 
-                    # Log detailed process information
-                    logger.info(f"Process {proc.info['name']} (PID: {proc.info['pid']}) is using {proc.info['memory_percent']}% memory")
-                    logger.info(f"Command line: {' '.join(proc.info['cmdline']) if proc.info['cmdline'] else 'N/A'}")
-                    logger.info(f"Threads: {proc.info['num_threads']}, Status: {proc.info['status']}")
+                processes_above_threshold.append(proc)
 
-                    # Add an event indicating the process exceeded the memory threshold
-                    span.add_event("Process exceeds memory threshold")
-
-                    # Additional warning if memory usage exceeds 90%
-                    if proc.info['memory_percent'] > 90:
-                        logger.warning(f"Process {proc.info['name']} (PID: {proc.info['pid']}) is using more than 90% memory!")
-                        span.set_status("Warning: Memory usage > 90%")
-                    
-                    # Update traced processes dictionary
-                    traced_processes[pid] = {'last_traced': current_time, 'memory_usage': memory_usage}
-                        
+                # Update traced processes dictionary
+                traced_processes[pid] = {'last_traced': current_time, 'memory_usage': memory_usage}
+        
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            # Skip processes that are inaccessible or have ended, and log this event
             logger.warning(f"Could not access process {proc.info.get('name', 'Unknown')} (PID: {proc.info.get('pid', 'Unknown')})")
 
+    # Create an aggregated trace with all the processes above the threshold
+    if processes_above_threshold:
+        with tracer.start_as_current_span(f"High Memory Usage: Threshold {threshold}%") as span:
+            for proc in processes_above_threshold:
+                span.add_event(
+                    f"Process {proc.info['name']} (PID: {proc.info['pid']})",
+                    attributes={
+                        "pid": proc.info['pid'],
+                        "name": proc.info['name'],
+                        "memory_usage": proc.info['memory_percent'],
+                        "command_line": ' '.join(proc.info['cmdline']) if proc.info['cmdline'] else 'N/A',
+                        "num_threads": proc.info['num_threads'],
+                        "status": proc.info['status']
+                    }
+                )
+                logger.info(f"Process {proc.info['name']} (PID: {proc.info['pid']}) using {proc.info['memory_percent']}% memory")
+    
 if __name__ == '__main__':
     # Start the Prometheus HTTP server on port 8000
     start_http_server(8000)
