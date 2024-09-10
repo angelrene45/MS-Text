@@ -1,56 +1,81 @@
-import time
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.exporter.jaeger import JaegerExporter
-from opentelemetry.sdk.resources import Resource
+#!/bin/ksh
 
-# Set up the Tracer Provider and Exporter (Jaeger in this case)
-resource = Resource(attributes={"service.name": "span-refresh-every-5-mins"})
-trace.set_tracer_provider(TracerProvider(resource=resource))
-tracer = trace.get_tracer(__name__)
+# Inicializar variables para los parámetros
+MODE=""
+ACCT=""
+APPNAME=""
+ROLE=""
+DBNAME=""
+SCHEMA=""
 
-jaeger_exporter = JaegerExporter(
-    agent_host_name="localhost",  # Set your Jaeger host if needed
-    agent_port=6831,
-)
+# Procesar los argumentos
+for arg in "$@"
+do
+  case $arg in
+    --mode=read)
+      MODE="read"
+      shift
+      ;;
+    --mode=readwrite)
+      MODE="readwrite"
+      shift
+      ;;
+    --acct=*)
+      ACCT="${arg#*=}"
+      shift
+      ;;
+    --appname=*)
+      APPNAME="${arg#*=}"
+      shift
+      ;;
+    --role=*)
+      ROLE="${arg#*=}"
+      shift
+      ;;
+    --dbname=*)
+      DBNAME="${arg#*=}"
+      shift
+      ;;
+    --schema=*)
+      SCHEMA="${arg#*=}"
+      shift
+      ;;
+    *)
+      echo "Error: Opción no válida."
+      echo "Uso: $0 --mode=[read|readwrite] --acct=<value> --appname=<value> --role=<value> --dbname=<value> --schema=<value>"
+      exit 1
+      ;;
+  esac
+done
 
-span_processor = BatchSpanProcessor(jaeger_exporter)
-trace.get_tracer_provider().add_span_processor(span_processor)
+# Verificar si el parámetro mode se estableció
+if [ -z "$MODE" ]; then
+  echo "Error: No se especificó el modo."
+  echo "Uso: $0 --mode=[read|readwrite] --acct=<value> --appname=<value> --role=<value> --dbname=<value> --schema=<value>"
+  exit 1
+fi
 
-# Function to create and return a new span every 5 minutes
-def get_current_span():
-    current_span = None
-    last_span_time = time.time()
+# Mostrar los parámetros proporcionados
+echo "Modo seleccionado: $MODE"
+echo "Cuenta: $ACCT"
+echo "Nombre de la aplicación: $APPNAME"
+echo "Rol: $ROLE"
+echo "Base de datos: $DBNAME"
+echo "Esquema: $SCHEMA"
 
-    while True:
-        # Check if 5 minutes have passed (300 seconds)
-        if time.time() - last_span_time >= 300:
-            # Close the previous span if it exists
-            if current_span:
-                current_span.end()
-                print("Previous span closed.")
-            
-            # Start a new span
-            current_span = tracer.start_span("refresh_span_every_5_minutes")
-            current_span.set_attribute("key", "value")
-            current_span.add_event("Starting a new span")
+# Actuar según el modo
+if [ "$MODE" = "read" ]; then
+  echo "Ejecutando en modo de solo lectura..."
+  # Aquí puedes agregar las acciones específicas para solo lectura
+elif [ "$MODE" = "readwrite" ]; then
+  echo "Ejecutando en modo de lectura y escritura..."
+  # Aquí puedes agregar las acciones específicas para lectura y escritura
+else
+  echo "Error: Modo no válido."
+  exit 1
+fi
 
-            # Update the timestamp for the new span
-            last_span_time = time.time()
-            print("New span created.")
-        
-        # Return the current active span
-        yield current_span
-        
-        # Wait a short interval before rechecking (e.g., 1 second)
-        time.sleep(1)
-
-if __name__ == "__main__":
-    span_generator = get_current_span()
-
-    # Continuously retrieve the current span in the main program
-    while True:
-        current_span = next(span_generator)
-        print(f"Current span: {current_span}")
-        time.sleep(5)  # Example usage, change according to your needs
+# Opcionalmente, puedes verificar si otros parámetros importantes están vacíos
+if [ -z "$ACCT" ] || [ -z "$APPNAME" ] || [ -z "$ROLE" ] || [ -z "$DBNAME" ] || [ -z "$SCHEMA" ]; then
+  echo "Advertencia: No se proporcionaron todos los parámetros opcionales."
+fi
