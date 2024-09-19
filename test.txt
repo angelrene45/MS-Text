@@ -1,44 +1,70 @@
-Failover Strategy in Transformit
-In the event of an error during execution, Transformit has a built-in failover mechanism to ensure that the system can recover from failures and continue processing without repeating successful tasks. This is done via a restart_config table that tracks the status of each task within every module.
+Failover Challenges and Scenarios for Transformit
+Overview
+Transformit is a Python-based library that facilitates data extraction and transformation from a variety of sources, including:
 
-How Failover Works:
-Task Failure Detection
-Each task within a module is monitored for its execution status. If a task fails due to any error (such as connection failure, service unavailability, or other issues), the failure is recorded in the restart_config table associated with that module.
+Message Queues (MQ)
+DB2
+Sybase
+Salesforce
+Web APIs
+It also supports moving files to Snowflake internal stages, performing SQL-based transformations, and loading data into target tables. Transformit interacts heavily with Snowflake as a central data store, making failover handling between Snowflake accounts critical to ensuring data integrity and availability.
 
-Failover Process
-Upon the next execution of the Transformit framework:
+Problem Statement
+In our current environment, we have two Snowflake accounts: EAST (primary) and CENTRAL (replica), with replication occurring every 15 minutes. During a failover event, when EAST becomes unavailable, operations shift to CENTRAL, which then becomes the new primary account. This failover introduces the following challenges:
 
-Tasks that were successfully completed in the previous execution are skipped.
-Only the task(s) that failed during the last run are re-executed.
-This ensures that no unnecessary repetition occurs, optimizing resource usage and reducing downtime.
+Data Replication Delay: There is a 15-minute delay in data replication from EAST to CENTRAL. Any data not replicated before the failover may be lost or inaccessible in the CENTRAL account.
+Task Continuity: During a failover, running tasks in Transformit could be interrupted, leading to incomplete or failed data processing.
+Real-Time Data Loss: For real-time data sources such as MQ, any messages processed during a failover might be lost if they haven’t been fully committed or replicated.
+Scenarios to Cover in Transformit
+Snowflake Account Failover (General Case)
+When Snowflake switches from EAST to CENTRAL, the tasks in Transformit that were executing at the time of the failover may not complete successfully. These tasks need to be:
 
-Types of Failures Handled:
-Connection Failures
-If a data source or target is unavailable due to network or connection issues, the task is marked as failed, and the system will retry in the next execution.
+Automatically retried in the CENTRAL account.
+Logged to ensure transparency of what was processed and what was not.
+Real-Time Data Loss in MQ Tasks
+When consuming real-time data from MQ, a failover event may cause message loss, especially if the messages were processed but not yet replicated in Snowflake. Scenarios include:
 
-Service Unavailability
-If the external service (API, database, etc.) is down, the failure is recorded, and recovery occurs upon the next execution.
+Messages consumed by Transformit but lost due to EAST failure before replication.
+Messages inserted into EAST but not yet committed or replicated to CENTRAL.
+Data Consistency Across Accounts
+For batch processes where data from multiple sources (DB2, Sybase, Salesforce, etc.) is inserted into Snowflake, a failover event may lead to data inconsistencies. Ensuring that no partial or duplicate data is inserted into the CENTRAL account after failover is critical.
 
-Other Errors
-Any unforeseen runtime errors that prevent task completion are also recorded, triggering the failover mechanism.
+Stage Table Operations During Failover
+During transformations in Snowflake stages, a failover may cause the transformations to fail midway. The system needs to be aware of this and either:
 
-Failover Example
-Let’s walk through an example of how failover works in the Polling module:
+Rollback partial transformations.
+Resume the transformation process in the CENTRAL account once failover occurs.
+SQL-Based Transformations
+When Transformit runs SQL transformations based on files, a failover event could lead to incomplete transformations. These transformations need to either:
 
-Initial Run:
+Be rolled back and retried.
+Be executed from the last successful point to avoid redundant operations or duplicates.
+Downstream Data Delivery
+For the DataDownstream module, which generates files for downstream consumption or pushes data to target databases, a failover may interrupt these processes, leading to incomplete files or missing data in the target systems. Ensuring downstream consistency is essential.
 
-Polling starts processing files from NFS.
-Halfway through the process, the connection to Snowflake fails.
-The failure is recorded in the restart_config table for the Polling module.
-Failover on Next Run:
+Key Challenges
+Handling Replication Lag: Ensuring that data is not lost between the last replication and the failover event is a major challenge. This is especially critical for real-time data streams like MQ.
 
-On the subsequent execution of Transformit, the system checks the restart_config table.
-Polling skips the files that were already successfully uploaded.
-It retries the failed task to upload the remaining files to Snowflake internal stages.
-Benefits of Failover in Transformit
-Efficiency: Only failed tasks are retried, reducing redundant work.
-Resilience: Ensures that long-running processes can recover from interruptions.
-Transparency: Logs and the restart_config table provide visibility into what failed and how it was recovered.
+Task Resilience: Developing mechanisms to gracefully handle task interruptions and automatically resume them in the new primary account is essential to minimize downtime and errors.
+
+Logging and Error Handling: Properly logging failed tasks and their status is crucial for transparency and troubleshooting during failover events.
+
+Minimizing Data Loss: Ensuring that Transformit can re-process data after failover, especially for real-time sources, will be key to avoiding data loss.
+
+Proposed Solutions
+To address these scenarios, we are considering the following approaches:
+
+Task Checkpointing
+Implement checkpoints for tasks, especially for real-time data streams (MQ). This will allow Transformit to re-consume data from the last known good state after failover.
+
+Retry Logic with Failover Awareness
+Introduce a failover-aware retry logic. Tasks will retry automatically in the CENTRAL account if a failover is detected. This will reduce manual intervention and ensure that tasks complete even after a failover event.
+
+Graceful Task Suspension
+Pause tasks when a failover is imminent or detected, and resume them once the failover completes. This will help prevent incomplete operations or data loss.
+
+Enhanced Logging and Monitoring
+Add detailed logging and real-time monitoring to capture the state of tasks during a failover. This will enable the identification of any failures or lost data quickly.
+
 Conclusion
-The failover mechanism in Transformit provides a robust way to handle failures without impacting the entire data pipeline. By skipping successfully completed tasks and focusing on failed tasks, it ensures that data ingestion and transformation processes can recover gracefully, reducing downtime and increasing reliability.
-
+Ensuring that Transformit can handle Snowflake failover scenarios effectively is crucial to maintaining data integrity and system reliability. We are currently exploring these solutions to make Transformit more resilient in the face of Snowflake account failures and reduce the risk of data loss across all modules.
