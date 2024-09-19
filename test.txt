@@ -1,81 +1,44 @@
-#!/bin/ksh
+Failover Strategy in Transformit
+In the event of an error during execution, Transformit has a built-in failover mechanism to ensure that the system can recover from failures and continue processing without repeating successful tasks. This is done via a restart_config table that tracks the status of each task within every module.
 
-# Inicializar variables para los parámetros
-MODE=""
-ACCT=""
-APPNAME=""
-ROLE=""
-DBNAME=""
-SCHEMA=""
+How Failover Works:
+Task Failure Detection
+Each task within a module is monitored for its execution status. If a task fails due to any error (such as connection failure, service unavailability, or other issues), the failure is recorded in the restart_config table associated with that module.
 
-# Procesar los argumentos
-for arg in "$@"
-do
-  case $arg in
-    --mode=read)
-      MODE="read"
-      shift
-      ;;
-    --mode=readwrite)
-      MODE="readwrite"
-      shift
-      ;;
-    --acct=*)
-      ACCT="${arg#*=}"
-      shift
-      ;;
-    --appname=*)
-      APPNAME="${arg#*=}"
-      shift
-      ;;
-    --role=*)
-      ROLE="${arg#*=}"
-      shift
-      ;;
-    --dbname=*)
-      DBNAME="${arg#*=}"
-      shift
-      ;;
-    --schema=*)
-      SCHEMA="${arg#*=}"
-      shift
-      ;;
-    *)
-      echo "Error: Opción no válida."
-      echo "Uso: $0 --mode=[read|readwrite] --acct=<value> --appname=<value> --role=<value> --dbname=<value> --schema=<value>"
-      exit 1
-      ;;
-  esac
-done
+Failover Process
+Upon the next execution of the Transformit framework:
 
-# Verificar si el parámetro mode se estableció
-if [ -z "$MODE" ]; then
-  echo "Error: No se especificó el modo."
-  echo "Uso: $0 --mode=[read|readwrite] --acct=<value> --appname=<value> --role=<value> --dbname=<value> --schema=<value>"
-  exit 1
-fi
+Tasks that were successfully completed in the previous execution are skipped.
+Only the task(s) that failed during the last run are re-executed.
+This ensures that no unnecessary repetition occurs, optimizing resource usage and reducing downtime.
 
-# Mostrar los parámetros proporcionados
-echo "Modo seleccionado: $MODE"
-echo "Cuenta: $ACCT"
-echo "Nombre de la aplicación: $APPNAME"
-echo "Rol: $ROLE"
-echo "Base de datos: $DBNAME"
-echo "Esquema: $SCHEMA"
+Types of Failures Handled:
+Connection Failures
+If a data source or target is unavailable due to network or connection issues, the task is marked as failed, and the system will retry in the next execution.
 
-# Actuar según el modo
-if [ "$MODE" = "read" ]; then
-  echo "Ejecutando en modo de solo lectura..."
-  # Aquí puedes agregar las acciones específicas para solo lectura
-elif [ "$MODE" = "readwrite" ]; then
-  echo "Ejecutando en modo de lectura y escritura..."
-  # Aquí puedes agregar las acciones específicas para lectura y escritura
-else
-  echo "Error: Modo no válido."
-  exit 1
-fi
+Service Unavailability
+If the external service (API, database, etc.) is down, the failure is recorded, and recovery occurs upon the next execution.
 
-# Opcionalmente, puedes verificar si otros parámetros importantes están vacíos
-if [ -z "$ACCT" ] || [ -z "$APPNAME" ] || [ -z "$ROLE" ] || [ -z "$DBNAME" ] || [ -z "$SCHEMA" ]; then
-  echo "Advertencia: No se proporcionaron todos los parámetros opcionales."
-fi
+Other Errors
+Any unforeseen runtime errors that prevent task completion are also recorded, triggering the failover mechanism.
+
+Failover Example
+Let’s walk through an example of how failover works in the Polling module:
+
+Initial Run:
+
+Polling starts processing files from NFS.
+Halfway through the process, the connection to Snowflake fails.
+The failure is recorded in the restart_config table for the Polling module.
+Failover on Next Run:
+
+On the subsequent execution of Transformit, the system checks the restart_config table.
+Polling skips the files that were already successfully uploaded.
+It retries the failed task to upload the remaining files to Snowflake internal stages.
+Benefits of Failover in Transformit
+Efficiency: Only failed tasks are retried, reducing redundant work.
+Resilience: Ensures that long-running processes can recover from interruptions.
+Transparency: Logs and the restart_config table provide visibility into what failed and how it was recovered.
+Conclusion
+The failover mechanism in Transformit provides a robust way to handle failures without impacting the entire data pipeline. By skipping successfully completed tasks and focusing on failed tasks, it ensures that data ingestion and transformation processes can recover gracefully, reducing downtime and increasing reliability.
+
