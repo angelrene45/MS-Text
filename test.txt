@@ -1,91 +1,93 @@
-# Data Category: Customer Transactions
+# Script Name: `data_loader.py`
 
 ## Overview
-A general description of the data category. Explains the purpose of this data, how it is used in current processes, and its importance to the system.
+A brief description of the script’s purpose and what it does. Mention the problem it solves and why it was created.
 
 **Example**:  
-The **Customer Transactions** category stores all financial transactions made by customers on the platform. This includes payments, refunds, and adjustments. These data are used for financial reporting and customer activity monitoring.
+The `data_loader.py` script automates the process of extracting data from a CSV file, transforming it to match the required database schema, and loading it into a Snowflake table. It was created to reduce manual data uploads and ensure data quality checks before ingestion.
 
-## Key Points
-Key points that should be highlighted to quickly understand this data category. Could include unique characteristics, limitations, and dependencies.
-
-**Example**:
-- Data is updated every 15 minutes.
-- Transactions are linked to the customer through the `customer_id` field.
-- Sensitive fields like credit card information are encrypted.
-- The system does not store declined transactions.
-
-## Upstream
-Describes the sources of data entering this category. Explains where the data comes from, how it is collected, and which systems or processes provide it.
-
-**Example**:  
-The data comes from the **Payment Gateway API** and the **Internal Billing System**. The Payment Gateway handles credit card and PayPal transactions, while the Billing System processes refunds and invoice adjustments.
-
-## Downstream
-Defines where the data goes after being processed. Explains which systems, tables, or processes consume this data and how it impacts the overall data flow.
-
-**Example**:  
-Processed transaction data is used by:
-- The **Financial Reporting System** for daily and monthly reports.
-- The **Customer Dashboard** to display payment history to users.
-- The **Data Warehouse** for long-term analytics.
-
-## Autosys Jobs
-List of scheduled jobs (Autosys or others) related to this data category. Include the schedule, job dependencies, and the logic behind the scheduling.
-
-**Example**:  
-- **Job Name**: `AUTOLOAD_TRANSACTIONS`
-- **Schedule**: Runs every 15 minutes.
-- **Dependencies**: The job only runs if the file `transactions.csv` is present in the input directory.
-- **Description**: Loads transaction data from the payment gateway into the staging table.
-
-## Main Tables
-Describes the main tables that store this data. Provides an overview of each table, including key fields, data types, and how they relate to other tables.
-
-**Example**:  
-1. **Table**: `transactions`
-   - **Key Fields**: `transaction_id`, `customer_id`, `amount`, `payment_method`, `transaction_date`
-   - **Relationships**: Linked to the `customers` table via `customer_id`.
-   
-2. **Table**: `transaction_details`
-   - **Key Fields**: `transaction_id`, `item_id`, `quantity`, `price`
-   - **Relationships**: Linked to the `transactions` table via `transaction_id`.
-
-## Data Quality Checks
-Mechanisms and rules to verify data quality. Mention any automated or manual validations, such as duplication checks, null value checks, or quality thresholds.
+## Dependencies
+List any libraries, tools, or environments needed to run this script. Mention versions if specific ones are required.
 
 **Example**:
-- Ensures no duplicate `transaction_id` entries.
-- Validates that `amount` is a positive value.
-- Checks that the `payment_method` field only contains valid entries like 'Credit Card', 'PayPal', or 'Bank Transfer'.
+- Python 3.8+
+- pandas 1.4.0
+- Snowflake Connector 2.6.0
+- pyarrow 7.0.0 (for fast CSV processing)
 
-## Data Security & Compliance
-Guidelines on handling the security and compliance requirements around this data category. Explain permissions, encryption, anonymization, or any relevant measures.
-
-**Example**:
-- **PCI Compliance**: Credit card information is never stored in plain text. All sensitive information is encrypted using AES-256.
-- **Access Control**: Only authorized personnel have access to customer transaction data. This is enforced through role-based permissions.
-- **Anonymization**: All customer data is anonymized before being used for analytics.
-
-## Troubleshooting
-Tips for troubleshooting common issues associated with this data category, such as errors in extraction, loading, or processing.
+## Usage
+Provide instructions on how to run the script, including command-line arguments or configuration options, if applicable.
 
 **Example**:
-- **Issue**: Transaction data missing from the staging table.
-  - **Solution**: Check the upstream job logs to ensure the file `transactions.csv` was generated and moved to the correct location.
-- **Issue**: Data quality check failed due to invalid payment method.
-  - **Solution**: Investigate if new payment methods were introduced without proper validation rules.
+- To load a CSV file into Snowflake:
+  - `python data_loader.py --input_file "transactions.csv" --table "transaction_data"`
 
-## Contacts
-People or teams responsible for maintaining and monitoring this data. Include relevant contact information.
+## Arguments
+List and describe the arguments or parameters the script accepts (if any).
+
+| Argument        | Type     | Description                                  | Required | Default         |
+|-----------------|----------|----------------------------------------------|----------|-----------------|
+| `--input_file`  | `str`    | The path to the CSV file to be loaded         | Yes      | `None`          |
+| `--table`       | `str`    | The target Snowflake table to load the data into | Yes      | `None`      |
+| `--batch_size`  | `int`    | Number of rows to process in each batch       | No       | `1000`          |
+
+## Example
+Show an example of how the script is used with typical values.
 
 **Example**:
-- **Data Engineering Team**: data-engineering@example.com
-- **Financial Systems Team**: finance-systems@example.com
+- To load a file called `transactions.csv` into a Snowflake table called `transaction_data` with a batch size of 2000 rows:
+  - `python data_loader.py --input_file "transactions.csv" --table "transaction_data" --batch_size 2000`
 
-## Related Documentation
-Links or references to additional documentation, such as technical manuals, architectural diagrams, or specific guides for working with this data.
+## Output
+Describe what the script outputs, whether it’s a file, logs, printed results, or something else. Include an example of the output if possible.
 
 **Example**:
-- [Payment Gateway API Documentation](https://example.com/docs/payment-gateway)
-- [Financial Reporting System Architecture](https://example.com/docs/finance-system)
+- The script logs its progress to the console and a log file (`data_loader.log`):
+  - `INFO: Loaded 2000 rows into transaction_data.`
+  - `ERROR: Failed to load data due to invalid CSV format.`
+- After running, the target table in Snowflake will contain the uploaded data.
+
+## Error Handling
+Document any common errors or edge cases the script handles and how it reports those errors (e.g., via exceptions, error messages).
+
+**Example**:
+- **Common Error**: Input file not found.
+  - **Solution**: The script checks if the input file exists and provides an error message:  
+    `ERROR: File "transactions.csv" not found.`
+- **Common Error**: Snowflake connection failure.
+  - **Solution**: The script retries the connection up to three times before failing and logs the error:  
+    `ERROR: Could not connect to Snowflake. Retrying...`
+
+## Performance Considerations
+(Optional) If the script has performance implications, document any key points like memory usage, CPU consumption, or runtime efficiency.
+
+**Example**:
+- **Batch Size**: The default batch size is 1000 rows, which balances memory usage and speed. Increasing the batch size can improve performance for large datasets but may increase memory consumption.
+
+## Testing
+Mention how the script is tested, including any test cases, unit tests, or validation methods. Include sample commands for running tests if they exist.
+
+**Example**:
+- Unit tests are available in the `tests/test_data_loader.py` file.
+- To run the tests, use:
+  - `pytest tests/test_data_loader.py`
+
+## Future Improvements
+(Optional) Provide ideas for future enhancements or known limitations of the current version of the script.
+
+**Example**:
+- **Feature**: Support for multiple file formats (e.g., JSON, Parquet).
+- **Improvement**: Implement parallel processing to reduce the load time for large datasets.
+
+## Author
+Mention the author(s) of the script, with contact details if necessary.
+
+**Example**:
+- **Author**: Ángel René Herrera Calzada
+- **Email**: ar.herrera0@gmail.com
+
+## License
+Specify the script's license (if any).
+
+**Example**:
+- **License**: MIT License
