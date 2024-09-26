@@ -1,34 +1,53 @@
-# Data Category: [Category Name]
+# Script Name: [Script Name]
 
 ## Overview
-A general description of the data category. Explains the purpose of this data, how it is used in current processes, and its importance to the system.
+A brief description of the script’s purpose and what it does. Mention the problem it solves and why it was created.
 
-## Key Points
-Key points that should be highlighted to quickly understand this data category. Could include unique characteristics, limitations, and dependencies.
+## Dependencies
+List any libraries, tools, or environments needed to run this script. Mention versions if specific ones are required.
 
-## Upstream
-Describes the sources of data entering this category. Explains where the data comes from, how it is collected, and which systems or processes provide it.
+Example:
+- Python 3.8+
+- pandas 1.4.0
+- Snowflake Connector 2.6.0
 
-## Downstream
-Defines where the data goes after being processed. Explains which systems, tables, or processes consume this data and how it impacts the overall data flow.
+## Usage
+Provide instructions on how to run the script, including command-line arguments or configuration options, if applicable.
 
-## Autosys Jobs
-List of scheduled jobs (Autosys or others) related to this data category. Include the schedule, job dependencies, and the logic behind the scheduling.
+Example:
+- `python [script_name.py] --arg1 value1 --arg2 value2`
 
-## Main Tables
-Describes the main tables that store this data. Provides an overview of each table, including key fields, data types, and how they relate to other tables.
+## Arguments
+List and describe the arguments or parameters the script accepts (if any).
 
-## Data Quality Checks
-Mechanisms and rules to verify data quality. Mention any automated or manual validations, such as duplication checks, null value checks, or quality thresholds.
+| Argument        | Type     | Description                                 | Required | Default |
+|-----------------|----------|---------------------------------------------|----------|---------|
+| `--arg1`        | `str`    | Description of the first argument           | Yes      | `None`  |
+| `--arg2`        | `int`    | Description of the second argument          | No       | `10`    |
 
-## Data Security & Compliance
-Guidelines on handling the security and compliance requirements around this data category. Explain permissions, encryption, anonymization, or any relevant measures.
+## Example
+Show an example of how the script is used with typical values.
 
-## Troubleshooting
-Tips for troubleshooting common issues associated with this data category, such as errors in extraction, loading, or processing.
+Example:
+- `python [script_name.py] --arg1 "input_file.txt" --arg2 15`
 
-## Contacts
-People or teams responsible for maintaining and monitoring this data. Include relevant contact information.
+## Output
+Describe what the script outputs, whether it’s a file, logs, printed results, or something else. Include an example of the output if possible.
 
-## Related Documentation
-Links or references to additional documentation, such as technical manuals, architectural diagrams, or specific guides for working with this data.
+## Error Handling
+Document any common errors or edge cases the script handles and how it reports those errors (e.g., via exceptions, error messages).
+
+## Performance Considerations
+(Optional) If the script has performance implications, document any key points like memory usage, CPU consumption, or runtime efficiency.
+
+## Testing
+Mention how the script is tested, including any test cases, unit tests, or validation methods. Include sample commands for running tests if they exist.
+
+## Future Improvements
+(Optional) Provide ideas for future enhancements or known limitations of the current version of the script.
+
+## Author
+Mention the author(s) of the script, with contact details if necessary.
+
+## License
+Specify the script's license (if any).
