@@ -1,70 +1,34 @@
-Failover Challenges and Scenarios for Transformit
-Overview
-Transformit is a Python-based library that facilitates data extraction and transformation from a variety of sources, including:
+# Data Category: [Category Name]
 
-Message Queues (MQ)
-DB2
-Sybase
-Salesforce
-Web APIs
-It also supports moving files to Snowflake internal stages, performing SQL-based transformations, and loading data into target tables. Transformit interacts heavily with Snowflake as a central data store, making failover handling between Snowflake accounts critical to ensuring data integrity and availability.
+## Overview
+A general description of the data category. Explains the purpose of this data, how it is used in current processes, and its importance to the system.
 
-Problem Statement
-In our current environment, we have two Snowflake accounts: EAST (primary) and CENTRAL (replica), with replication occurring every 15 minutes. During a failover event, when EAST becomes unavailable, operations shift to CENTRAL, which then becomes the new primary account. This failover introduces the following challenges:
+## Key Points
+Key points that should be highlighted to quickly understand this data category. Could include unique characteristics, limitations, and dependencies.
 
-Data Replication Delay: There is a 15-minute delay in data replication from EAST to CENTRAL. Any data not replicated before the failover may be lost or inaccessible in the CENTRAL account.
-Task Continuity: During a failover, running tasks in Transformit could be interrupted, leading to incomplete or failed data processing.
-Real-Time Data Loss: For real-time data sources such as MQ, any messages processed during a failover might be lost if they haven’t been fully committed or replicated.
-Scenarios to Cover in Transformit
-Snowflake Account Failover (General Case)
-When Snowflake switches from EAST to CENTRAL, the tasks in Transformit that were executing at the time of the failover may not complete successfully. These tasks need to be:
+## Upstream
+Describes the sources of data entering this category. Explains where the data comes from, how it is collected, and which systems or processes provide it.
 
-Automatically retried in the CENTRAL account.
-Logged to ensure transparency of what was processed and what was not.
-Real-Time Data Loss in MQ Tasks
-When consuming real-time data from MQ, a failover event may cause message loss, especially if the messages were processed but not yet replicated in Snowflake. Scenarios include:
+## Downstream
+Defines where the data goes after being processed. Explains which systems, tables, or processes consume this data and how it impacts the overall data flow.
 
-Messages consumed by Transformit but lost due to EAST failure before replication.
-Messages inserted into EAST but not yet committed or replicated to CENTRAL.
-Data Consistency Across Accounts
-For batch processes where data from multiple sources (DB2, Sybase, Salesforce, etc.) is inserted into Snowflake, a failover event may lead to data inconsistencies. Ensuring that no partial or duplicate data is inserted into the CENTRAL account after failover is critical.
+## Autosys Jobs
+List of scheduled jobs (Autosys or others) related to this data category. Include the schedule, job dependencies, and the logic behind the scheduling.
 
-Stage Table Operations During Failover
-During transformations in Snowflake stages, a failover may cause the transformations to fail midway. The system needs to be aware of this and either:
+## Main Tables
+Describes the main tables that store this data. Provides an overview of each table, including key fields, data types, and how they relate to other tables.
 
-Rollback partial transformations.
-Resume the transformation process in the CENTRAL account once failover occurs.
-SQL-Based Transformations
-When Transformit runs SQL transformations based on files, a failover event could lead to incomplete transformations. These transformations need to either:
+## Data Quality Checks
+Mechanisms and rules to verify data quality. Mention any automated or manual validations, such as duplication checks, null value checks, or quality thresholds.
 
-Be rolled back and retried.
-Be executed from the last successful point to avoid redundant operations or duplicates.
-Downstream Data Delivery
-For the DataDownstream module, which generates files for downstream consumption or pushes data to target databases, a failover may interrupt these processes, leading to incomplete files or missing data in the target systems. Ensuring downstream consistency is essential.
+## Data Security & Compliance
+Guidelines on handling the security and compliance requirements around this data category. Explain permissions, encryption, anonymization, or any relevant measures.
 
-Key Challenges
-Handling Replication Lag: Ensuring that data is not lost between the last replication and the failover event is a major challenge. This is especially critical for real-time data streams like MQ.
+## Troubleshooting
+Tips for troubleshooting common issues associated with this data category, such as errors in extraction, loading, or processing.
 
-Task Resilience: Developing mechanisms to gracefully handle task interruptions and automatically resume them in the new primary account is essential to minimize downtime and errors.
+## Contacts
+People or teams responsible for maintaining and monitoring this data. Include relevant contact information.
 
-Logging and Error Handling: Properly logging failed tasks and their status is crucial for transparency and troubleshooting during failover events.
-
-Minimizing Data Loss: Ensuring that Transformit can re-process data after failover, especially for real-time sources, will be key to avoiding data loss.
-
-Proposed Solutions
-To address these scenarios, we are considering the following approaches:
-
-Task Checkpointing
-Implement checkpoints for tasks, especially for real-time data streams (MQ). This will allow Transformit to re-consume data from the last known good state after failover.
-
-Retry Logic with Failover Awareness
-Introduce a failover-aware retry logic. Tasks will retry automatically in the CENTRAL account if a failover is detected. This will reduce manual intervention and ensure that tasks complete even after a failover event.
-
-Graceful Task Suspension
-Pause tasks when a failover is imminent or detected, and resume them once the failover completes. This will help prevent incomplete operations or data loss.
-
-Enhanced Logging and Monitoring
-Add detailed logging and real-time monitoring to capture the state of tasks during a failover. This will enable the identification of any failures or lost data quickly.
-
-Conclusion
-Ensuring that Transformit can handle Snowflake failover scenarios effectively is crucial to maintaining data integrity and system reliability. We are currently exploring these solutions to make Transformit more resilient in the face of Snowflake account failures and reduce the risk of data loss across all modules.
+## Related Documentation
+Links or references to additional documentation, such as technical manuals, architectural diagrams, or specific guides for working with this data.
