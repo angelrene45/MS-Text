@@ -1,93 +1,17 @@
-# Script Name: `data_loader.py`
+# Changelog
 
-## Overview
-A brief description of the script’s purpose and what it does. Mention the problem it solves and why it was created.
+All notable changes to this project will be documented in this section.
 
-**Example**:  
-The `data_loader.py` script automates the process of extracting data from a CSV file, transforming it to match the required database schema, and loading it into a Snowflake table. It was created to reduce manual data uploads and ensure data quality checks before ingestion.
+### 2024-11-10
+#### Author: John Smith
+- Fixed a bug in the Snowflake connection that caused timeouts under heavy loads.
 
-## Dependencies
-List any libraries, tools, or environments needed to run this script. Mention versions if specific ones are required.
+### 2024-10-05
+#### Author: Jane Doe
+- Added support for batch processing to improve memory management.
+- Updated the `--batch_size` argument to allow dynamic control over data chunks.
 
-**Example**:
-- Python 3.8+
-- pandas 1.4.0
-- Snowflake Connector 2.6.0
-- pyarrow 7.0.0 (for fast CSV processing)
-
-## Usage
-Provide instructions on how to run the script, including command-line arguments or configuration options, if applicable.
-
-**Example**:
-- To load a CSV file into Snowflake:
-  - `python data_loader.py --input_file "transactions.csv" --table "transaction_data"`
-
-## Arguments
-List and describe the arguments or parameters the script accepts (if any).
-
-| Argument        | Type     | Description                                  | Required | Default         |
-|-----------------|----------|----------------------------------------------|----------|-----------------|
-| `--input_file`  | `str`    | The path to the CSV file to be loaded         | Yes      | `None`          |
-| `--table`       | `str`    | The target Snowflake table to load the data into | Yes      | `None`      |
-| `--batch_size`  | `int`    | Number of rows to process in each batch       | No       | `1000`          |
-
-## Example
-Show an example of how the script is used with typical values.
-
-**Example**:
-- To load a file called `transactions.csv` into a Snowflake table called `transaction_data` with a batch size of 2000 rows:
-  - `python data_loader.py --input_file "transactions.csv" --table "transaction_data" --batch_size 2000`
-
-## Output
-Describe what the script outputs, whether it’s a file, logs, printed results, or something else. Include an example of the output if possible.
-
-**Example**:
-- The script logs its progress to the console and a log file (`data_loader.log`):
-  - `INFO: Loaded 2000 rows into transaction_data.`
-  - `ERROR: Failed to load data due to invalid CSV format.`
-- After running, the target table in Snowflake will contain the uploaded data.
-
-## Error Handling
-Document any common errors or edge cases the script handles and how it reports those errors (e.g., via exceptions, error messages).
-
-**Example**:
-- **Common Error**: Input file not found.
-  - **Solution**: The script checks if the input file exists and provides an error message:  
-    `ERROR: File "transactions.csv" not found.`
-- **Common Error**: Snowflake connection failure.
-  - **Solution**: The script retries the connection up to three times before failing and logs the error:  
-    `ERROR: Could not connect to Snowflake. Retrying...`
-
-## Performance Considerations
-(Optional) If the script has performance implications, document any key points like memory usage, CPU consumption, or runtime efficiency.
-
-**Example**:
-- **Batch Size**: The default batch size is 1000 rows, which balances memory usage and speed. Increasing the batch size can improve performance for large datasets but may increase memory consumption.
-
-## Testing
-Mention how the script is tested, including any test cases, unit tests, or validation methods. Include sample commands for running tests if they exist.
-
-**Example**:
-- Unit tests are available in the `tests/test_data_loader.py` file.
-- To run the tests, use:
-  - `pytest tests/test_data_loader.py`
-
-## Future Improvements
-(Optional) Provide ideas for future enhancements or known limitations of the current version of the script.
-
-**Example**:
-- **Feature**: Support for multiple file formats (e.g., JSON, Parquet).
-- **Improvement**: Implement parallel processing to reduce the load time for large datasets.
-
-## Author
-Mention the author(s) of the script, with contact details if necessary.
-
-**Example**:
-- **Author**: Ángel René Herrera Calzada
-- **Email**: ar.herrera0@gmail.com
-
-## License
-Specify the script's license (if any).
-
-**Example**:
-- **License**: MIT License
+### 2024-09-26
+#### Author: Ángel René Herrera Calzada
+- Initial creation of the `data_loader.py` script.
+- Loads data from CSV files into Snowflake with basic error handling and logging.
