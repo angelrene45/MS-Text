@@ -1,17 +1,31 @@
-# Changelog
+import subprocess
+import os
 
-All notable changes to this project will be documented in this section.
+def check_requirements(venv_path, requirements_file="requirements.txt"):
+    # Define la ruta del ejecutable de pip-compile dentro del entorno virtual
+    pip_compile_path = os.path.join(venv_path, "bin", "pip-compile")
+    
+    # Verifica si pip-compile está instalado en el entorno virtual
+    if not os.path.isfile(pip_compile_path):
+        print(f"'pip-compile' is not installed in the virtual environment at {venv_path}.")
+        return
 
-### 2024-11-10
-#### Author: John Smith
-- Fixed a bug in the Snowflake connection that caused timeouts under heavy loads.
+    print(f"\nChecking dependencies in the virtual environment at {venv_path} using {requirements_file}...")
 
-### 2024-10-05
-#### Author: Jane Doe
-- Added support for batch processing to improve memory management.
-- Updated the `--batch_size` argument to allow dynamic control over data chunks.
+    try:
+        # Ejecuta pip-compile en modo dry-run dentro del entorno virtual
+        result = subprocess.run(
+            [pip_compile_path, "--dry-run", requirements_file],
+            check=True,
+            text=True,
+            capture_output=True
+        )
+        print("Dependencies are consistent!")
+        print(result.stdout)  # Muestra la salida de pip-compile, si es necesario
+    except subprocess.CalledProcessError as e:
+        print("There was an issue with dependencies:")
+        print(e.stderr)  # Muestra cualquier error en la salida
 
-### 2024-09-26
-#### Author: Ángel René Herrera Calzada
-- Initial creation of the `data_loader.py` script.
-- Loads data from CSV files into Snowflake with basic error handling and logging.
+# Ejemplo de uso: especifica la ruta del entorno virtual y el archivo de requirements
+venv_path = "/path/to/your/venv"
+check_requirements(venv_path, "requirements.txt")
