@@ -1,6 +1,16 @@
 [MULTILINE_PARSER]
-    Name              example_multiline
-    Type              regex
-    Flush_Timeout     5
-    Rule              "start_state" "/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} - (INFO|ERROR|WARNING|DEBUG)/" "cont"
-    Rule              "cont" "/.*/" "cont"
+    Name          multiline_log
+    Match_Regex   ^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} INFO
+    Flush_Timeout 1000
+    Parser        first_line_parser
+    Parser        continuation_line_parser
+
+[PARSER]
+    Name         first_line_parser
+    Format       regex
+    Regex        ^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) (?<level>[A-Z]+) - (?<message>.*)
+
+[PARSER]
+    Name         continuation_line_parser
+    Format       regex
+    Regex        ^\s+(?<message>.*)
