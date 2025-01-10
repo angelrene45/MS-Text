@@ -1,39 +1,6 @@
-[SERVICE]
-    # Configuración general del servicio Fluent Bit
-    Flush          5           # Intervalo de envío (segundos)
-    Log_Level      info        # Nivel de log para Fluent Bit (cambia a debug para pruebas)
-    Daemon         Off
-
-[INPUT]
-    # Leer los logs desde un archivo
-    Name              tail
-    Path              /path/to/logs/*.log  # Cambia esto a la ruta de tus logs
-    Tag               tableau
-    Multiline         On
-    Parser_Firstline  log_firstline
-    Refresh_Interval  5
-    Skip_Long_Lines   On  # Evita truncar líneas largas
-
-[FILTER]
-    # Agrupar las líneas relacionadas en un solo bloque
-    Name              multiline
-    Match             tableau
-    Multiline_Key     message
-    Multiline_Flush   5
-
-[OUTPUT]
-    # Enviar los logs a Loki
-    Name              loki
-    Match             tableau
-    Host              loki-server  # Cambia esto por la dirección de tu servidor Loki
-    Port              3100
-    Labels            job=tableau,environment=production
-    Auto_Kubernetes_Labels Off
-
-[PARSER]
-    # Parser para identificar la primera línea de un bloque de logs
-    Name              log_firstline
-    Format            regex
-    Regex             ^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} - (INFO|ERROR|WARNING|DEBUG).*$
-    Time_Key          time
-    Time_Format       %Y-%m-%d %H:%M:%S,%L
+[MULTILINE_PARSER]
+    Name              example_multiline
+    Type              regex
+    Flush_Timeout     5
+    Rule              "start_state" "/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} - (INFO|ERROR|WARNING|DEBUG)/" "cont"
+    Rule              "cont" "/.*/" "cont"
