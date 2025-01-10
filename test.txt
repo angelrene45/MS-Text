@@ -1,5 +1,9 @@
 [MULTILINE_PARSER]
     Name          multiline_log
     Flush_Timeout 1000
+
+    # Rule 1: Matches the start of a new log entry (timestamp + log level).
     Rule          "start_state" "/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} (INFO|ERROR|WARNING|DEBUG|CRITICAL)/" "cont_state"
+
+    # Rule 2: Matches continuation lines (do not start with a timestamp + log level).
     Rule          "cont_state"  "/^(?!\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} (INFO|ERROR|WARNING|DEBUG|CRITICAL))/" "cont_state"
