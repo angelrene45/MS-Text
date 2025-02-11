@@ -1,10 +1,7 @@
+from prometheus_client import start_http_server, Gauge
 import psutil
 import time
 import argparse
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
-from opentelemetry.metrics import set_meter_provider
 
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -12,7 +9,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import set_tracer_provider
 
 # Parse command-line arguments
-parser = argparse.ArgumentParser(description="Monitor CPU and memory usage and send traces if thresholds are exceeded.")
+parser = argparse.ArgumentParser(description="Monitor CPU and memory usage with Prometheus and send traces if thresholds are exceeded.")
 parser.add_argument("--cpu-threshold", type=float, default=50.0, help="CPU usage threshold percentage (default: 50%)")
 parser.add_argument("--memory-threshold", type=float, default=50.0, help="Memory usage threshold percentage (default: 50%)")
 args = parser.parse_args()
@@ -20,46 +17,30 @@ args = parser.parse_args()
 CPU_THRESHOLD = args.cpu_threshold
 MEMORY_THRESHOLD = args.memory_threshold
 
-# Configure the OTLP exporter for metrics and traces
-metric_exporter = OTLPMetricExporter(endpoint="http://localhost:4317", insecure=True)
-trace_exporter = OTLPSpanExporter(endpoint="http://localhost:4317", insecure=True)
+# Prometheus metrics
+cpu_usage_metric = Gauge("server_cpu_usage", "Current CPU usage percentage")
+memory_usage_metric = Gauge("server_memory_usage", "Current memory usage percentage")
 
-# Configure the metric provider
-reader = PeriodicExportingMetricReader(metric_exporter, export_interval_millis=5000)
-meter_provider = MeterProvider(metric_readers=[reader])
-set_meter_provider(meter_provider)
-meter = meter_provider.get_meter("server_metrics")
-
-# Configure the trace provider
+# OpenTelemetry tracing setup
 trace_provider = TracerProvider()
+trace_exporter = OTLPSpanExporter(endpoint="http://localhost:4317", insecure=True)
 trace_provider.add_span_processor(BatchSpanProcessor(trace_exporter))
 set_tracer_provider(trace_provider)
 tracer = trace_provider.get_tracer("server_tracer")
 
-# Define CPU usage metric
-cpu_usage_metric = meter.create_observable_gauge(
-    "server.cpu.usage",
-    callbacks=[lambda _: [("value", psutil.cpu_percent(interval=1))]],
-    description="CPU usage percentage"
-)
-
-# Define memory usage metric
-memory_usage_metric = meter.create_observable_gauge(
-    "server.memory.usage",
-    callbacks=[lambda _: [("value", psutil.virtual_memory().percent)]],
-    description="Memory usage percentage"
-)
-
 def capture_top_processes():
-    """
-    Captures the top 50 processes with the highest CPU usage if CPU or memory exceeds the specified threshold.
-    Sends this information as a trace.
-    """
+    """ Captures and traces the top 50 processes when CPU or Memory exceeds the threshold. """
     cpu_usage = psutil.cpu_percent(interval=1)
     memory_usage = psutil.virtual_memory().percent
 
+    # Update Prometheus metrics
+    cpu_usage_metric.set(cpu_usage)
+    memory_usage_metric.set(memory_usage)
+
+    print(f"Metrics updated - CPU: {cpu_usage}% | RAM: {memory_usage}%")
+
     if cpu_usage > CPU_THRESHOLD or memory_usage > MEMORY_THRESHOLD:
-        # Start a new trace span when CPU or memory exceeds the threshold
+        # Create a trace for high CPU/memory usage
         with tracer.start_as_current_span("High CPU/Memory Usage") as span:
             span.set_attribute("cpu.usage", cpu_usage)
             span.set_attribute("memory.usage", memory_usage)
@@ -80,15 +61,18 @@ def capture_top_processes():
                     }
                     process_info.append(proc_info)
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    # Skip processes that the current user cannot access
+                    # Skip processes that cannot be accessed
                     continue  
             
-            # Add process data to the trace
+            # Attach process info to the trace
             span.set_attribute("top_50_processes", str(process_info))
             print(f"🔴 ALERT: CPU={cpu_usage}% RAM={memory_usage}%, sending trace with top 50 processes")
 
-# Run the monitoring loop
-print(f"Monitoring started with thresholds: CPU > {CPU_THRESHOLD}%, RAM > {MEMORY_THRESHOLD}%")
-while True:
-    capture_top_processes()  # Check system status every iteration
-    time.sleep(10)  # Wait 10 seconds before checking again
+if __name__ == "__main__":
+    print(f"🚀 Starting Prometheus Metrics Server on port 8000 (Thresholds: CPU>{CPU_THRESHOLD}%, RAM>{MEMORY_THRESHOLD}%)")
+    start_http_server(8000)  # Expose metrics at http://localhost:8000
+    
+    # Continuous monitoring loop
+    while True:
+        capture_top_processes()
+        time.sleep(10)  # Update every 10 seconds
