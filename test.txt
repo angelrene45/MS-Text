@@ -1,39 +1,77 @@
-**Subject:** Key Achievements from March 10, 2022, to Present
+Below is a **short slide deck** in English that captures the most important information about **Snowflake Cortex Analyst** from the provided documentation. Feel free to adjust the wording or add visuals as needed.
 
-Hello [Manager’s Name],
+---
 
-I hope you’re doing well. Below is a concise overview of my key achievements during the past three years:
+## Slide 1: Title
+**Snowflake Cortex Analyst**  
+*LLM-powered, fully-managed text-to-SQL solution for conversational analytics*  
 
-1. **Development of “Transformit” Library**  
-   - Created a modular Python library to streamline ELT workflows and reduce time-to-market for new data pipelines.
+---
 
-2. **Data Pipeline Optimization**  
-   - Maintained and enhanced API data extraction, transformation, and loading processes into Snowflake, focusing on scalability and efficiency.
+## Slide 2: Overview
+- **What is it?**  
+  - A fully-managed, large language model (LLM)-powered feature in Snowflake Cortex  
+  - Lets business users ask questions in **natural language** and get direct answers without writing SQL  
+- **Why it Matters**  
+  - Rapidly deliver high-precision, self-service analytics  
+  - Lower total cost of ownership (TCO) with Snowflake’s scalable engine  
 
-3. **Quality and Security Measures**  
-   - Developed robust unit and integration tests (Pytest) to ensure reliability.  
-   - Integrated SonarQube and Snyk for continuous code quality and dependency security checks.
+---
 
-4. **Technical Documentation and Knowledge Sharing**  
-   - Implemented comprehensive documentation using Sphinx, improving onboarding and cross-team collaboration.
+## Slide 3: Key Features
+- **Text-to-SQL via LLMs**  
+  - Interprets business questions and generates SQL queries on the fly  
+- **Semantic Model**  
+  - Rich YAML-based model for higher accuracy (maps business concepts to database schemas)  
+- **Convenient REST API**  
+  - Easily integrate into Slack, Teams, Streamlit apps, or any custom interface  
+- **Security and Governance**  
+  - Respects Snowflake’s RBAC and governance policies  
+  - Data stays within Snowflake’s boundary unless you opt-in to Azure OpenAI models  
 
-5. **Hackathon Contributions**  
-   - **GenAI Hackathon 2023 | ResearchWizard**: Built an AI-powered assistant to query Snowflake-hosted data via natural language, deliver custom visualizations, and automate SQL generation.  
-   - **GenAI Hackathon 2024 | AutoLift.AI**: Developed a solution to identify outdated libraries, recommend updated versions, and streamline code maintenance in Python repositories across the organization.
+---
 
-6. **Collaboration with Data Science Team**  
-   - Explored new Large Language Model (LLM) capabilities within Snowflake Cortex alongside the Data Science team, evaluating opportunities for enhanced data analysis and automation.
+## Slide 4: Setup & Access
+1. **Enable Cortex Analyst**:  
+   - `ALTER ACCOUNT SET ENABLE_CORTEX_ANALYST = TRUE;`  
+2. **Grant Access**:  
+   - Must have `SNOWFLAKE.CORTEX_USER` role or equivalent  
+   - Control semantic model visibility via stages and SELECT privileges  
+3. **Semantic Model YAML**:  
+   - Upload to a Snowflake stage or pass inline  
+   - Grants natural language knowledge of tables, columns, metrics  
 
-7. **Databricks Onboarding & Production Setup**  
-   - Collaborated with the MS Databricks team to handle the entire onboarding process and set up our production instance.  
-   - Created service principals (SPN), configured ADLS, set up clusters and jobs, and integrated everything within Morgan Stanley’s SDLC.  
-   - Ensured security standards, disaster recovery, and best practices were followed throughout the project.
+---
 
-Overall, these initiatives have helped improve productivity, reduce errors, and accelerate project delivery. If you need more details, I’d be happy to provide them.
+## Slide 5: Limitations & Region Availability
+- **Limitations**  
+  - Default rate limit: 20 requests/min  
+  - Cannot access results of previous queries in multi-turn conversation  
+  - Strictly for SQL-resolvable questions; no broad “insights” generation  
+- **Regions**  
+  - Natively available in select AWS & Azure regions (Virginia, Oregon, Frankfurt, etc.)  
+  - Cross-region inference can be enabled for accounts outside these regions  
 
-Thank you for your time and support!
+---
 
-Best regards,  
-[Your Name]  
-[Your Title / Role]  
-[Your Contact Information]
+## Slide 6: Cost & Next Steps
+- **Usage Cost**:  
+  - Based on messages processed (successful requests)  
+  - Warehouse costs still apply for any executed SQL queries  
+- **Next Steps**  
+  - Set up a semantic model and stage  
+  - Integrate via REST API or Streamlit for a user-friendly chat interface  
+  - Consider enabling Azure OpenAI models if needed for advanced LLM options  
+
+---
+
+**Q&A** (Optional Slide)
+- Any questions on setup, security, or usage?
+
+---
+
+### Tips
+- Keep slides clean with **short bullet points**.  
+- Add a simple **flow diagram** showing “User → Natural Language → Cortex Analyst → SQL → Snowflake Data → Answer.”  
+
+Use these slides as a foundation, and feel free to add visuals or additional details based on your audience’s needs.
