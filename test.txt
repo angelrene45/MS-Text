@@ -1,77 +1,25 @@
-Below is a **short slide deck** in English that captures the most important information about **Snowflake Cortex Analyst** from the provided documentation. Feel free to adjust the wording or add visuals as needed.
+Aquí tienes cómo puedes completar cada sección del formulario con base en la información proporcionada:
 
----
+### **Executive Summary**  
+Our solution provides an intelligent and automated dashboard for the EMEA Community Affairs team to measure the impact of the "Giving Back" strategy. It aggregates key metrics on employee participation in donations and volunteering, offering insights into engagement trends, charity effectiveness, and overall satisfaction. The solution enables data-driven decision-making to optimize philanthropic initiatives.
 
-## Slide 1: Title
-**Snowflake Cortex Analyst**  
-*LLM-powered, fully-managed text-to-SQL solution for conversational analytics*  
+### **Key Features**  
+- **Total Donations Overview** – Aggregates donation amounts and tracks growth.  
+- **Volunteer Participation Analytics** – Visualizes hours contributed by employees across locations and departments.  
+- **Charity Impact Analysis** – Tracks fund allocation and effectiveness of charity initiatives.  
+- **Employee Sentiment Insights** – Analyzes survey responses on CSR engagement.  
+- **Filters & Drill-Downs** – Allows dynamic filtering by time, region, charity, and employee role.  
 
----
+### **Effectiveness of the Solution**  
+- Enables real-time tracking of donations and volunteering activities.  
+- Provides actionable insights through key performance indicators (KPIs) such as average donation per employee, participation trends, and charity satisfaction scores.  
+- Helps the management team identify areas for improvement in employee engagement and CSR initiatives.  
+- Facilitates better resource allocation to charities with high impact.  
 
-## Slide 2: Overview
-- **What is it?**  
-  - A fully-managed, large language model (LLM)-powered feature in Snowflake Cortex  
-  - Lets business users ask questions in **natural language** and get direct answers without writing SQL  
-- **Why it Matters**  
-  - Rapidly deliver high-precision, self-service analytics  
-  - Lower total cost of ownership (TCO) with Snowflake’s scalable engine  
+### **Next Steps**  
+- **Data Integration** – Enhance the solution by integrating additional data sources for deeper insights.  
+- **AI-powered Analysis** – Implement machine learning models to predict engagement trends.  
+- **User Adoption & Training** – Ensure smooth onboarding of stakeholders and end-users.  
+- **Production Deployment** – Optimize performance and security for enterprise-wide implementation.  
 
----
-
-## Slide 3: Key Features
-- **Text-to-SQL via LLMs**  
-  - Interprets business questions and generates SQL queries on the fly  
-- **Semantic Model**  
-  - Rich YAML-based model for higher accuracy (maps business concepts to database schemas)  
-- **Convenient REST API**  
-  - Easily integrate into Slack, Teams, Streamlit apps, or any custom interface  
-- **Security and Governance**  
-  - Respects Snowflake’s RBAC and governance policies  
-  - Data stays within Snowflake’s boundary unless you opt-in to Azure OpenAI models  
-
----
-
-## Slide 4: Setup & Access
-1. **Enable Cortex Analyst**:  
-   - `ALTER ACCOUNT SET ENABLE_CORTEX_ANALYST = TRUE;`  
-2. **Grant Access**:  
-   - Must have `SNOWFLAKE.CORTEX_USER` role or equivalent  
-   - Control semantic model visibility via stages and SELECT privileges  
-3. **Semantic Model YAML**:  
-   - Upload to a Snowflake stage or pass inline  
-   - Grants natural language knowledge of tables, columns, metrics  
-
----
-
-## Slide 5: Limitations & Region Availability
-- **Limitations**  
-  - Default rate limit: 20 requests/min  
-  - Cannot access results of previous queries in multi-turn conversation  
-  - Strictly for SQL-resolvable questions; no broad “insights” generation  
-- **Regions**  
-  - Natively available in select AWS & Azure regions (Virginia, Oregon, Frankfurt, etc.)  
-  - Cross-region inference can be enabled for accounts outside these regions  
-
----
-
-## Slide 6: Cost & Next Steps
-- **Usage Cost**:  
-  - Based on messages processed (successful requests)  
-  - Warehouse costs still apply for any executed SQL queries  
-- **Next Steps**  
-  - Set up a semantic model and stage  
-  - Integrate via REST API or Streamlit for a user-friendly chat interface  
-  - Consider enabling Azure OpenAI models if needed for advanced LLM options  
-
----
-
-**Q&A** (Optional Slide)
-- Any questions on setup, security, or usage?
-
----
-
-### Tips
-- Keep slides clean with **short bullet points**.  
-- Add a simple **flow diagram** showing “User → Natural Language → Cortex Analyst → SQL → Snowflake Data → Answer.”  
-
-Use these slides as a foundation, and feel free to add visuals or additional details based on your audience’s needs.
+Si quieres algún ajuste o más detalles, dime y lo mejoramos. 🚀
