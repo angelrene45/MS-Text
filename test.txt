@@ -1,92 +1,106 @@
 import snowflake.connector
 
-# Configura tu conexión con Snowflake.
-# (Reemplaza <TU_USUARIO>, <TU_PASSWORD>, <TU_CUENTA> y demás parámetros)
-conn = snowflake.connector.connect(
-    user='<TU_USUARIO>',
-    password='<TU_PASSWORD>',
-    account='<TU_CUENTA>',
-    warehouse='<TU_WAREHOUSE>',   # opcional
-    database='<TU_BASE_DATOS>',  # opcional
-    schema='<TU_ESQUEMA>'        # opcional
-)
+def generate_stage_ddl(db_name, schema_name, stage_name, cursor):
+    """
+    Generates a CREATE OR REPLACE STAGE DDL statement for a named stage in Snowflake
+    by querying DESCRIBE STAGE and reconstructing the necessary properties.
 
-cursor = conn.cursor()
+    :param db_name: Name of the database that contains the stage.
+    :param schema_name: Name of the schema that contains the stage.
+    :param stage_name: The stage name (without @).
+    :param cursor: An active Snowflake cursor (from snowflake.connector).
 
-# Nombre completo del stage que queremos describir
-db_name = "MI_BD"
-schema_name = "MI_ESQUEMA"
-stage_name = "MI_STAGE"
+    :return: A string containing the CREATE OR REPLACE STAGE statement.
+    """
+    # Build the DESCRIBE STAGE query
+    describe_query = f"DESCRIBE STAGE {db_name}.{schema_name}.{stage_name}"
+    
+    # Execute the DESCRIBE STAGE command
+    cursor.execute(describe_query)
+    rows = cursor.fetchall()
+    
+    # Convert the result into a dictionary: {property_name: property_value, ...}
+    # Example of returned rows structure:
+    # [("type", "INTERNAL"), ("url", "sfc://..."), ("file_format", "(...)"), ...]
+    stage_props = {row[0].lower(): row[1] for row in rows}
+    
+    # Determine if the stage is INTERNAL or EXTERNAL
+    stage_type = stage_props.get("type", "").upper()
+    
+    # Common properties
+    url = stage_props.get("url", "")
+    file_format = stage_props.get("file_format", "")
+    copy_options = stage_props.get("copy_options", "")
+    comment = stage_props.get("comment", "")
+    
+    # Start building the DDL
+    ddl = f"CREATE OR REPLACE STAGE {db_name}.{schema_name}.{stage_name}"
+    
+    # If EXTERNAL, we typically include URL and possibly STORAGE_INTEGRATION or CREDENTIALS
+    if stage_type == "EXTERNAL":
+        if url:
+            ddl += f"\n  URL = '{url}'"
+        
+        # Check for a STORAGE_INTEGRATION property if present
+        storage_integration = stage_props.get("storage_integration", "")
+        if storage_integration:
+            ddl += f"\n  STORAGE_INTEGRATION = {storage_integration}"
+        
+        # Check for CREDENTIALS if present (uncomment if needed)
+        # credentials = stage_props.get("credentials", "")
+        # if credentials:
+        #     ddl += f"\n  CREDENTIALS = {credentials}"
+    
+    # File format (e.g., "(TYPE = CSV FIELD_DELIMITER = '|')" )
+    if file_format:
+        ddl += f"\n  FILE_FORMAT = {file_format}"
+    
+    # Copy options (e.g., "(ON_ERROR='CONTINUE')" )
+    if copy_options:
+        ddl += f"\n  COPY_OPTIONS = {copy_options}"
+    
+    # Comment
+    if comment:
+        # Escape single quotes in the comment to avoid SQL syntax issues
+        safe_comment = comment.replace("'", "''")
+        ddl += f"\n  COMMENT = '{safe_comment}'"
+    
+    # End the statement
+    ddl += ";"
+    
+    return ddl
 
-# 1. Ejecutamos DESCRIBE STAGE
-describe_query = f"DESCRIBE STAGE {db_name}.{schema_name}.{stage_name}"
-cursor.execute(describe_query)
 
-# 2. Cargamos los resultados en un diccionario:
-#    Cada fila en DESCRIBE STAGE suele venir con columnas: (name, value, ...)
-#    Nos interesa name (index 0) y value (index 1)
-describe_result = cursor.fetchall()
-stage_props = {row[0].lower(): row[1] for row in describe_result}  # .lower() para unificar claves
-
-# Cierra el cursor si lo deseas
-cursor.close()
-
-# 3. Construimos la sentencia CREATE OR REPLACE STAGE
-# --------------------------------------------------------------------
-
-# a) Determina si es INTERNAL o EXTERNAL por la propiedad 'type'
-stage_type = stage_props.get("type", "").upper()  # "INTERNAL" / "EXTERNAL"
-
-# b) Extrae propiedades comunes
-url          = stage_props.get("url", "")
-file_format  = stage_props.get("file_format", "")
-copy_options = stage_props.get("copy_options", "")
-comment      = stage_props.get("comment", "")
-
-# c) Comienza a formar el DDL base
-ddl = f"CREATE OR REPLACE STAGE {db_name}.{schema_name}.{stage_name}"
-
-# d) Si es EXTERNAL, normalmente aparecerá la URL del bucket S3/Azure/GCS, 
-#    integración de almacenamiento (storage_integration) o credenciales.
-#    Si es INTERNAL, no se especifica la URL.
-if stage_type == "EXTERNAL":
-    if url:
-        ddl += f"\n  URL = '{url}'"
-
-    # En DESCRIBE STAGE, si está configurado, podríamos tener "storage_integration"
-    # o "credentials". Ejemplo:
-    storage_integration = stage_props.get("storage_integration", "")
-    if storage_integration:
-        ddl += f"\n  STORAGE_INTEGRATION = {storage_integration}"
-
-    # Para "credentials" (si existiera):
-    # credentials = stage_props.get("credentials", "")
-    # if credentials:
-    #     ddl += f"\n  CREDENTIALS = {credentials}"
-
-# e) FILE_FORMAT
-#    Suele ser algo como "(TYPE = CSV FIELD_DELIMITER = '|' ...)"
-if file_format:
-    ddl += f"\n  FILE_FORMAT = {file_format}"
-
-# f) COPY_OPTIONS
-#    Igual, vendrá en un formato "par1 = val1 par2 = val2"
-if copy_options:
-    ddl += f"\n  COPY_OPTIONS = {copy_options}"
-
-# g) COMMENT
-if comment:
-    # Escapar comillas simples si aparecen
-    safe_comment = comment.replace("'", "''")
-    ddl += f"\n  COMMENT = '{safe_comment}'"
-
-# cierra la instrucción
-ddl += ";"
-
-# 4. Imprime o guarda el DDL generado
-print("-------- DDL GENERADO --------")
-print(ddl)
-print("-----------------------------")
-
-# Si lo deseas, desconecta
-conn.close()
+# ---------------------------
+# Example usage (main script)
+# ---------------------------
+if __name__ == "__main__":
+    # Sample connection settings (replace placeholders)
+    conn = snowflake.connector.connect(
+        user='YOUR_USER',
+        password='YOUR_PASSWORD',
+        account='YOUR_ACCOUNT',
+        warehouse='YOUR_WAREHOUSE',
+        database='YOUR_DATABASE',
+        schema='YOUR_SCHEMA'
+    )
+    
+    # Create a cursor
+    cur = conn.cursor()
+    
+    # Define the database, schema, and stage name you want to describe
+    db_name = "MY_DB"
+    schema_name = "MY_SCHEMA"
+    stage_name = "MY_STAGE"
+    
+    # Generate the DDL
+    ddl_statement = generate_stage_ddl(db_name, schema_name, stage_name, cur)
+    
+    # Print the generated CREATE OR REPLACE STAGE statement
+    print("----- Generated DDL -----")
+    print(ddl_statement)
+    print("-------------------------")
+    
+    # Clean up
+    cur.close()
+    conn.close()
