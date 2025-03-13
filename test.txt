@@ -1,138 +1,92 @@
-### **Key Features from the First Image (Giving Back by City Dashboard)**  
+import snowflake.connector
 
-1. **Overall Impact**  
-   - 10 charities supported.  
-   - 47K children benefited.  
-   - 33K total volunteer hours.  
-   - 47.67% employee participation in volunteering.  
+# Configura tu conexión con Snowflake.
+# (Reemplaza <TU_USUARIO>, <TU_PASSWORD>, <TU_CUENTA> y demás parámetros)
+conn = snowflake.connector.connect(
+    user='<TU_USUARIO>',
+    password='<TU_PASSWORD>',
+    account='<TU_CUENTA>',
+    warehouse='<TU_WAREHOUSE>',   # opcional
+    database='<TU_BASE_DATOS>',  # opcional
+    schema='<TU_ESQUEMA>'        # opcional
+)
 
-2. **Financial Contributions**  
-   - £29.63K in employee donations.  
-   - £338K in grant expenditure.  
-   - 84K in cost savings.  
+cursor = conn.cursor()
 
-3. **Charity Performance & Impact Overview**  
-   - *The Felix Project* (UK, London) has the highest cost savings (£20K) and income increase (£35K).  
-   - *Csodalampa* (Hungary, Budapest) has a high income increase (£25K) and strong social impact (24 mentions).  
-   - *Place2Be* (UK, London) shows a significant increase in income (£30K).  
+# Nombre completo del stage que queremos describir
+db_name = "MI_BD"
+schema_name = "MI_ESQUEMA"
+stage_name = "MI_STAGE"
 
-4. **Volunteering & Engagement by Country**  
-   - **United Kingdom:** 450 volunteers, 71 organizations supported, 330 events.  
-   - **Hungary:** 163 volunteers, 56 organizations supported, 157 events.  
-   - **Germany:** 33 volunteers, 19 organizations supported, 46 events.  
-   - **France:** 21 volunteers, 11 organizations supported, 20 events.  
+# 1. Ejecutamos DESCRIBE STAGE
+describe_query = f"DESCRIBE STAGE {db_name}.{schema_name}.{stage_name}"
+cursor.execute(describe_query)
 
----
+# 2. Cargamos los resultados en un diccionario:
+#    Cada fila en DESCRIBE STAGE suele venir con columnas: (name, value, ...)
+#    Nos interesa name (index 0) y value (index 1)
+describe_result = cursor.fetchall()
+stage_props = {row[0].lower(): row[1] for row in describe_result}  # .lower() para unificar claves
 
-### **Key Features from the Second Image (EMEA Giving Back Dashboard)**  
+# Cierra el cursor si lo deseas
+cursor.close()
 
-1. **Community Impact**  
-   - 47K total children benefited (22K directly, 26K indirectly).  
-   - 13K workshops conducted.  
-   - 2,541 total volunteers.  
+# 3. Construimos la sentencia CREATE OR REPLACE STAGE
+# --------------------------------------------------------------------
 
-2. **Financial Contributions**  
-   - 84K in cost savings.  
-   - 182K in income increase.  
-   - £44M in grant expenditure.  
+# a) Determina si es INTERNAL o EXTERNAL por la propiedad 'type'
+stage_type = stage_props.get("type", "").upper()  # "INTERNAL" / "EXTERNAL"
 
-3. **Top Charities by Income Increase**  
-   - *The Felix Project* has the highest impact.  
-   - *Place2Be* follows closely with a high income increase (£30K).  
-   - *Csodalampa* (Hungary) shows strong financial and social impact.  
+# b) Extrae propiedades comunes
+url          = stage_props.get("url", "")
+file_format  = stage_props.get("file_format", "")
+copy_options = stage_props.get("copy_options", "")
+comment      = stage_props.get("comment", "")
 
-4. **Charity Engagement Metrics**  
-   - *Alliance pour l'éducation* (France, Paris) has the highest number of children indirectly benefited (1,000).  
-   - *Csodalampa* (Hungary, Budapest) impacts 4,564 children, with 118 volunteers.  
-   - *Place2Be* (UK, London) benefits 18,568 children, with 363 volunteers.  
-   - *PEEK* (UK, Glasgow) shows strong volunteer engagement (120 volunteers).  
+# c) Comienza a formar el DDL base
+ddl = f"CREATE OR REPLACE STAGE {db_name}.{schema_name}.{stage_name}"
 
-These insights showcase the broad impact of volunteering, financial contributions, and engagement across different charities and countries.
+# d) Si es EXTERNAL, normalmente aparecerá la URL del bucket S3/Azure/GCS, 
+#    integración de almacenamiento (storage_integration) o credenciales.
+#    Si es INTERNAL, no se especifica la URL.
+if stage_type == "EXTERNAL":
+    if url:
+        ddl += f"\n  URL = '{url}'"
 
+    # En DESCRIBE STAGE, si está configurado, podríamos tener "storage_integration"
+    # o "credentials". Ejemplo:
+    storage_integration = stage_props.get("storage_integration", "")
+    if storage_integration:
+        ddl += f"\n  STORAGE_INTEGRATION = {storage_integration}"
 
+    # Para "credentials" (si existiera):
+    # credentials = stage_props.get("credentials", "")
+    # if credentials:
+    #     ddl += f"\n  CREDENTIALS = {credentials}"
 
+# e) FILE_FORMAT
+#    Suele ser algo como "(TYPE = CSV FIELD_DELIMITER = '|' ...)"
+if file_format:
+    ddl += f"\n  FILE_FORMAT = {file_format}"
 
+# f) COPY_OPTIONS
+#    Igual, vendrá en un formato "par1 = val1 par2 = val2"
+if copy_options:
+    ddl += f"\n  COPY_OPTIONS = {copy_options}"
 
+# g) COMMENT
+if comment:
+    # Escapar comillas simples si aparecen
+    safe_comment = comment.replace("'", "''")
+    ddl += f"\n  COMMENT = '{safe_comment}'"
 
+# cierra la instrucción
+ddl += ";"
 
+# 4. Imprime o guarda el DDL generado
+print("-------- DDL GENERADO --------")
+print(ddl)
+print("-----------------------------")
 
-
-
-**Executive Summary**  
-These two dashboards (“EMEA Giving Back Dashboard” and “Summary | Giving Back Dashboard”) provide a comprehensive view of the impact generated by various volunteer and donation initiatives across Europe. They consolidate data on volunteers, volunteer hours, grant spending, cost savings, income increases, and the direct and indirect benefit to children and communities.
-
----
-
-## Key Insights
-
-1. **Volunteer Efforts and Financial Investment**  
-   - **Total Volunteers**: 2,541, with 22,000 volunteer hours in the EMEA dashboard.  
-   - **Grant Expenditure**: 44M in the EMEA dashboard and £338K in the Summary dashboard.  
-   - **Cost Savings**: 84K in both dashboards.  
-   - **Income Increase**: 182,000 in total (EMEA).
-
-2. **Social Reach and Children Benefited**  
-   - Up to **47K children** supported in total (Summary dashboard).  
-   - The “Charity Engagement Metrics” table (EMEA) shows how each organization impacts both “Children Directly Benefited” and “Children Indirectly Benefit.”
-
-3. **Notable Organizations**  
-   - **The Felix Project** and **Place2Be** (both in the UK) show the highest values in volunteering and economic impact (e.g., a 35K income increase for The Felix Project).  
-   - **Csodalampa** (Hungary) and **Alliance pour l’éducation** (France) also stand out for the number of children benefited.
-
-4. **Participation by Country/Office**  
-   - The **United Kingdom** leads in the number of volunteers (450) and initiatives.  
-   - Other key countries include **Hungary** (163 volunteers) and **Germany** (33 volunteers), with projects such as Kinderschutz-bund and Die Arche.
-
-5. **Interaction Indicators and “Sentiment Score”**  
-   - The average Sentiment Score is 2.67 in the EMEA dashboard, indicating a generally positive perception, though it varies by organization (e.g., 0.43, 0.30, etc.).  
-   - Additional metrics such as **Social Media Mentions** (140) gauge public visibility.
-
----
-
-## Key Dashboard Features
-
-1. **Interactive Visuals and Filters**  
-   - Bar charts comparing organizations by volunteers, children benefited, etc.  
-   - Filters by country, city, and charity name for segmentation and deeper analysis.
-
-2. **Geographic Map (Giving Back by City)**  
-   - Provides a quick overview of where volunteering initiatives take place (France, Germany, Hungary, UK).  
-   - Bubble size and color reflect the magnitude of activity in each location.
-
-3. **Top-Level Indicators**  
-   - Aggregated metrics (Total Hours Volunteered, Cost Savings, Income Increase, etc.) for a quick global view of initiatives.
-
-4. **Detailed Metric Tables**  
-   - Allows understanding of data at the organization or country level: total volunteers, children benefited (direct/indirect), sentiment score, and so on.  
-   - Offers comparisons and final totals for each metric.
-
----
-
-## Next Steps
-
-1. **Deep Dive into Sentiment Score and Social Mentions**  
-   - Analyze why certain organizations score better or get more mentions, and develop communication strategies to increase visibility.
-
-2. **Optimize Resource Allocation**  
-   - Given the breakdown of income generated, cost savings, and grants, prioritize organizations with the greatest social impact and ROI.
-
-3. **Foster Multi-Country Collaboration**  
-   - Replicate successful initiatives in countries with fewer volunteers (e.g., Ireland, with only 5 volunteers).
-
-4. **Track Volunteer Retention and Growth**  
-   - Examine historical data to identify trends in participation and expand internal volunteer programs.
-
-5. **Automate Updates and Regular Reporting**  
-   - Implement a continuous data flow so decision-makers have real-time information to adapt campaigns accordingly.
-
----
-
-## Solution Effectiveness
-
-- **Centralization and Transparency**: Consolidates all relevant data (volunteers, funding, beneficiaries) in one place, enabling informed decision-making.  
-- **Measurement of Social and Economic Impact**: Clearly quantifies community reach (children benefited, events, donated hours) and ROI (cost savings, income increase).  
-- **Easy Analysis and Comparison**: Multiple visualizations allow for immediate comparisons across organizations and countries, pinpointing areas for improvement.  
-- **Boosting a Culture of Volunteering**: Data breakdown encourages employee participation and effective coordination of global initiatives.  
-- **Scalability and Ongoing Tracking**: The reporting model can be extended to other regions or expanded with new impact indicators as CSR (Corporate Social Responsibility) strategies evolve.
-
-Overall, these dashboards demonstrate a robust capacity for analysis, communication, and strategic focus, maximizing both the social and economic value of volunteer and donation programs.
+# Si lo deseas, desconecta
+conn.close()
