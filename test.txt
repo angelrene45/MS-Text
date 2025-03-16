@@ -1,301 +1,72 @@
-import snowflake.connector
+Aquí tienes el contenido de los slides en inglés para que puedas crear tu propia presentación en PowerPoint:
 
-def generate_stage_ddl(db_name, schema_name, stage_name, cursor):
-    """
-    Generates a CREATE OR REPLACE STAGE DDL statement for a named stage in Snowflake
-    by querying DESCRIBE STAGE and reconstructing the necessary properties.
+---
 
-    :param db_name: Name of the database that contains the stage.
-    :param schema_name: Name of the schema that contains the stage.
-    :param stage_name: The stage name (without @).
-    :param cursor: An active Snowflake cursor (from snowflake.connector).
+### **Slide 1: Title Slide**  
+**Title:** Snowflake Cortex Analyst  
+**Subtitle:** A Smarter Way to Access Data Insights  
 
-    :return: A string containing the CREATE OR REPLACE STAGE statement.
-    """import os
-import snowflake.connector
-import logging
-import sys
+---
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+### **Slide 2: Problem Statement**  
+**Title:** Today's Process is Slow and Inefficient  
+**Content:**  
+- Business users struggle to access data due to limited SQL knowledge.  
+- BI dashboards are often outdated and lack flexibility.  
+- Data teams spend excessive time answering ad hoc questions.  
 
+---
 
-def create_snowflake_connection(
-    user: str,
-    password: str,
-    account: str,
-    warehouse: str,
-    database: str,
-    schema: str
-):
-    """
-    Create and return a Snowflake connection object.
-    """
-    try:
-        logging.info("Establishing Snowflake connection...")
-        connection = snowflake.connector.connect(
-            user=user,
-            password=password,
-            account=account
-        )
-        # Set session context (warehouse, db, schema) if needed
-        connection.cursor().execute(f"USE WAREHOUSE {warehouse}")
-        connection.cursor().execute(f"USE DATABASE {database}")
-        connection.cursor().execute(f"USE SCHEMA {schema}")
-        logging.info("Snowflake connection established successfully.")
-        return connection
+### **Slide 3: Introducing Cortex Analyst**  
+**Title:** What is Cortex Analyst?  
+**Content:**  
+- A fully managed service providing a conversational interface to structured data in Snowflake.  
+- Enables business users to perform self-serve analytics with high accuracy.  
+- Provides industry-leading precision in text-to-SQL conversion.  
 
-    except snowflake.connector.Error as e:
-        logging.error("Error connecting to Snowflake: %s", e)
-        sys.exit(1)
+---
 
+### **Slide 4: High-Accuracy Text-to-SQL**  
+**Title:** High-Accuracy Text-to-SQL  
+**Content:**  
+- Powered by state-of-the-art AI and LLMs.  
+- Uses a semantic model to ensure precision.  
 
-def download_files_from_stage(
-    connection,
-    stage_name: str,
-    file_pattern: str,
-    local_directory: str
-):
-    """
-    Download files from a Snowflake internal stage to a local directory.
-    
-    :param connection: An active Snowflake connection
-    :param stage_name: Internal stage name (e.g., @my_internal_stage)
-    :param file_pattern: File pattern to specify which files to get (e.g., '*.csv')
-    :param local_directory: Path to the local directory where files will be downloaded
-    """
-    if not os.path.exists(local_directory):
-        os.makedirs(local_directory, exist_ok=True)
+---
 
-    get_query = f"""
-        GET {stage_name}/{file_pattern}
-        'file://{os.path.abspath(local_directory)}'
-        AUTO_DECOMPRESS=FALSE
-        OVERWRITE=TRUE
-    """
-    logging.info("Executing GET query: %s", get_query.strip())
-    try:
-        with connection.cursor() as cur:
-            cur.execute(get_query)
-            results = cur.fetchall()
-            for row in results:
-                # Each row might look like: (file_name, status, message, ...)
-                logging.info("Downloaded file info: %s", row)
-        logging.info("Download completed.")
-    except snowflake.connector.Error as e:
-        logging.error("Error downloading files from stage: %s", e)
-        sys.exit(1)
+### **Slide 5: Convenient REST API**  
+**Title:** Convenient REST API  
+**Content:**  
+- Seamlessly integrates into any application.  
+- Allows automated data retrieval and analysis.  
 
+---
 
-def upload_files_to_stage(
-    connection,
-    stage_name: str,
-    local_directory: str,
-    file_pattern: str
-):
-    """
-    Upload files from a local directory to a Snowflake internal stage.
-    
-    :param connection: An active Snowflake connection
-    :param stage_name: Internal stage name (e.g., @my_internal_stage_target)
-    :param local_directory: Path to the local directory containing files to upload
-    :param file_pattern: File pattern to choose which files to upload (e.g., '*.csv')
-    """
-    put_query = f"""
-        PUT 'file://{os.path.abspath(os.path.join(local_directory, file_pattern))}'
-        {stage_name}
-        AUTO_COMPRESS=FALSE
-        OVERWRITE=TRUE
-    """
-    logging.info("Executing PUT query: %s", put_query.strip())
-    try:
-        with connection.cursor() as cur:
-            cur.execute(put_query)
-            results = cur.fetchall()
-            for row in results:
-                # Each row might look like: (status, message, source, target, ...)
-                logging.info("Uploaded file info: %s", row)
-        logging.info("Upload completed.")
-    except snowflake.connector.Error as e:
-        logging.error("Error uploading files to stage: %s", e)
-        sys.exit(1)
+### **Slide 6: Security & Governance**  
+**Title:** Security & Governance  
+**Content:**  
+- Does not train on customer data.  
+- Uses metadata from semantic models for inference.  
+- No data leaves Snowflake's governance boundary.  
+- Fully integrates with Snowflake's RBAC privacy features.  
 
+---
 
-def main():
-    """
-    Example workflow:
-    1. Connect to Snowflake (source) -> download files from an internal stage.
-    2. Connect to Snowflake (target) -> upload files to another internal stage.
-    """
-    
-    # -------------------------------------------------------------------------
-    # 1. Snowflake SOURCE account connection details
-    # -------------------------------------------------------------------------
-    source_user = "SOURCE_USER"
-    source_password = "SOURCE_PASSWORD"
-    source_account = "SOURCE_ACCOUNT"   # e.g., "ab12345.east-us-2.azure"
-    source_warehouse = "SOURCE_WH"
-    source_database = "SOURCE_DB"
-    source_schema = "SOURCE_SCHEMA"
-    
-    # Internal stage and file pattern in SOURCE
-    source_stage = "@my_source_stage"
-    source_file_pattern = "*.csv"  # adjust according to your needs
-    download_directory = "./local_downloads"
+### **Slide 7: Outperforms DIY Solutions**  
+**Title:** Outperforms DIY Solutions  
+**Content:**  
+- Easier to use and more accurate than building an in-house text-to-SQL service.  
+- Reduces total cost of ownership (TCO).  
 
-    # -------------------------------------------------------------------------
-    # 2. Snowflake TARGET account connection details
-    # -------------------------------------------------------------------------
-    target_user = "TARGET_USER"
-    target_password = "TARGET_PASSWORD"
-    target_account = "TARGET_ACCOUNT"   # e.g., "xy67890.us-east-1"
-    target_warehouse = "TARGET_WH"
-    target_database = "TARGET_DB"
-    target_schema = "TARGET_SCHEMA"
+---
 
-    # Internal stage in TARGET
-    target_stage = "@my_target_stage"
-    upload_directory = "./local_downloads"  # same as download directory
-    upload_file_pattern = "*.csv"
-    
-    # -------------------------------------------------------------------------
-    # STEP A: Connect to SOURCE and download files
-    # -------------------------------------------------------------------------
-    source_conn = create_snowflake_connection(
-        user=source_user,
-        password=source_password,
-        account=source_account,
-        warehouse=source_warehouse,
-        database=source_database,
-        schema=source_schema
-    )
-    
-    download_files_from_stage(
-        connection=source_conn,
-        stage_name=source_stage,
-        file_pattern=source_file_pattern,
-        local_directory=download_directory
-    )
-    
-    # Close source connection if desired
-    source_conn.close()
-    
-    # -------------------------------------------------------------------------
-    # STEP B: Connect to TARGET and upload files
-    # -------------------------------------------------------------------------
-    target_conn = create_snowflake_connection(
-        user=target_user,
-        password=target_password,
-        account=target_account,
-        warehouse=target_warehouse,
-        database=target_database,
-        schema=target_schema
-    )
-    
-    upload_files_to_stage(
-        connection=target_conn,
-        stage_name=target_stage,
-        local_directory=upload_directory,
-        file_pattern=upload_file_pattern
-    )
+### **Slide 8: What is a Semantic Model?**  
+**Title:** What is a Semantic Model?  
+**Content:**  
+- Captures and provides essential semantic information to help AI understand data.  
+- Enhances schema comprehension with descriptive names, synonyms, and table explanations.  
+- Enables better data modeling by exposing relevant columns, defining key metrics, and filtering conditions.  
 
-    # Close target connection if desired
-    target_conn.close()
-    
-    logging.info("File transfer complete.")
+---
 
-
-if __name__ == "__main__":
-    main()
-
-    # Build the DESCRIBE STAGE query
-    describe_query = f"DESCRIBE STAGE {db_name}.{schema_name}.{stage_name}"
-    
-    # Execute the DESCRIBE STAGE command
-    cursor.execute(describe_query)
-    rows = cursor.fetchall()
-    
-    # Convert the result into a dictionary: {property_name: property_value, ...}
-    # Example of returned rows structure:
-    # [("type", "INTERNAL"), ("url", "sfc://..."), ("file_format", "(...)"), ...]
-    stage_props = {row[0].lower(): row[1] for row in rows}
-    
-    # Determine if the stage is INTERNAL or EXTERNAL
-    stage_type = stage_props.get("type", "").upper()
-    
-    # Common properties
-    url = stage_props.get("url", "")
-    file_format = stage_props.get("file_format", "")
-    copy_options = stage_props.get("copy_options", "")
-    comment = stage_props.get("comment", "")
-    
-    # Start building the DDL
-    ddl = f"CREATE OR REPLACE STAGE {db_name}.{schema_name}.{stage_name}"
-    
-    # If EXTERNAL, we typically include URL and possibly STORAGE_INTEGRATION or CREDENTIALS
-    if stage_type == "EXTERNAL":
-        if url:
-            ddl += f"\n  URL = '{url}'"
-        
-        # Check for a STORAGE_INTEGRATION property if present
-        storage_integration = stage_props.get("storage_integration", "")
-        if storage_integration:
-            ddl += f"\n  STORAGE_INTEGRATION = {storage_integration}"
-        
-        # Check for CREDENTIALS if present (uncomment if needed)
-        # credentials = stage_props.get("credentials", "")
-        # if credentials:
-        #     ddl += f"\n  CREDENTIALS = {credentials}"
-    
-    # File format (e.g., "(TYPE = CSV FIELD_DELIMITER = '|')" )
-    if file_format:
-        ddl += f"\n  FILE_FORMAT = {file_format}"
-    
-    # Copy options (e.g., "(ON_ERROR='CONTINUE')" )
-    if copy_options:
-        ddl += f"\n  COPY_OPTIONS = {copy_options}"
-    
-    # Comment
-    if comment:
-        # Escape single quotes in the comment to avoid SQL syntax issues
-        safe_comment = comment.replace("'", "''")
-        ddl += f"\n  COMMENT = '{safe_comment}'"
-    
-    # End the statement
-    ddl += ";"
-    
-    return ddl
-
-
-# ---------------------------
-# Example usage (main script)
-# ---------------------------
-if __name__ == "__main__":
-    # Sample connection settings (replace placeholders)
-    conn = snowflake.connector.connect(
-        user='YOUR_USER',
-        password='YOUR_PASSWORD',
-        account='YOUR_ACCOUNT',
-        warehouse='YOUR_WAREHOUSE',
-        database='YOUR_DATABASE',
-        schema='YOUR_SCHEMA'
-    )
-    
-    # Create a cursor
-    cur = conn.cursor()
-    
-    # Define the database, schema, and stage name you want to describe
-    db_name = "MY_DB"
-    schema_name = "MY_SCHEMA"
-    stage_name = "MY_STAGE"
-    
-    # Generate the DDL
-    ddl_statement = generate_stage_ddl(db_name, schema_name, stage_name, cur)
-    
-    # Print the generated CREATE OR REPLACE STAGE statement
-    print("----- Generated DDL -----")
-    print(ddl_statement)
-    print("-------------------------")
-    
-    # Clean up
-    cur.close()
-    conn.close()
+Con este contenido, puedes estructurar tu presentación de manera efectiva en PowerPoint. ¡Déjame saber si necesitas ajustes! 🚀
