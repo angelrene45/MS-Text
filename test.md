@@ -1,27 +1,29 @@
-Hi [Name],
+How many interactions did we have with each company name in 2023?
 
-Thanks for the detailed explanation. Based on the challenges you've outlined around structured content extraction from PDFs for the disclosure surveillance project, we believe Snowflake Cortex could be a great fit.
+List the top-10 tickers by interaction count for Corporate Access meetings last quarter.
 
-Cortex allows us to:
-- Parse and analyze raw document content using SQL functions.
-- Split text into structured chunks with context-preserving overlap using `SPLIT_TEXT_RECURSIVE_CHARACTER`.
-- Apply large language models (LLMs) directly in Snowflake to detect analyst mentions, company names, and assess whether disclosures are appropriate, underdisclosed, or overdisclosed.
+What is the average pro-rated duration (minutes) of live meetings with ticker “AAPL.O” year-to-date?
 
-Additionally, tomorrow there will be a hands-on lab where the Snowflake team will demonstrate **Cortex Agents**, **Cortex Search**, and **Document AI**. The session will cover how to process both **PDFs and images**, including extracting structured data such as **tables and section headers**.
+Show a monthly trend of interactions in the Macro area, broken down by derived ticker, for the past 18 months.
 
-As part of that, the function `PARSE_DOCUMENT` will be highlighted. It supports two modes:
-- **LAYOUT**: returns structured markdown content, including tables and document layout.
-- **OCR** *(default)*: extracts plain text content from scanned or image-based documents.
+For ticker “MS.N”, list every interaction subject where the priority-contact flag = ‘Y’ during Q1 2024.
 
-This functionality aligns closely with our use case, where accurate and structured extraction from "Important Regulatory Disclosures" sections is key.
+Count the number of unique employees who engaged with each company in 2022.
 
-We can build a pipeline that:
-1. Extracts content using `PARSE_DOCUMENT` in the appropriate mode.
-2. Splits the content using `SPLIT_TEXT_RECURSIVE_CHARACTER`, preserving context.
-3. Leverages Cortex LLMs to assess disclosure accuracy for each indexed analyst.
-4. Outputs structured flags and summaries for review.
+For each interaction type (meeting, call, webinar…), display the number of distinct companies touched this year.
 
-Let me know if you'd like us to prototype this approach on a sample PDF and we can also join the hands-on lab together to explore these features further.
+Identify companies that had virtual interactions but no in-person meetings in 2023.
 
-Best regards,  
-[Your Name]
+Which three companies logged the longest single interaction (by IED-weighted duration) since 2021?
+
+Provide the total interaction duration per company for Tier 1 clients during the last six months.
+
+Show the split of live vs non-live interactions for each ticker in Q4 2023.
+
+List all interactions linked to company name “Tesla Inc.” and show channel, subject, and employee key.
+
+How many Corporate Access webinars did we hold for S&P 500 tickers this year? (assumes a ticker→index mapping is available)
+
+Find companies whose interaction count dropped by more than 50 % from 2022 to 2023.
+
+For every interaction category, return the average number of distinct tickers contacted per month over the last two years.
