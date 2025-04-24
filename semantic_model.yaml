@@ -1,0 +1,264 @@
+name: interactions_semantic_model
+description: >
+  Semantic model that captures, analyses, and exposes information
+  about client interactions and meetings (dates, channels, subjects,
+  durations, employees, teams, companies, and tickers).  
+  It supports business questions on volume, intensity, coverage,
+  and client engagement, and links activity to company securities.
+
+model_version: '2024-04-24'
+
+tables:
+  # --------------------------------------------------------------------
+  - name: V_GLOBAL_INTERACTION
+    base_table:
+      database: GPS_DWH_DB
+      schema:   RWS_DW
+      table:    V_GLOBAL_INTERACTION
+    description: |
+      Master table of all global interactions or meetings:
+      dates, areas, types, categories, duration, and client /
+      employee metadata.  It is the hub table for the model.
+    primary_key:
+      columns: [INTERACTION_ID]
+
+    dimensions:
+      - name: INTERACTION_ID
+        expr: INTERACTION_ID
+        data_type: VARCHAR(30)
+        description: Unique identifier for a specific interaction or meeting.
+        synonyms:
+          - interaction id
+          - interaction code
+          - meeting id
+          - interaction number
+
+      - name: INTERACTION_AREA
+        expr: INTERACTION_AREA
+        data_type: VARCHAR(30)
+        description: Area or department in which the interaction took place.
+        sample_values: [Equity Research, Macro, Corporate Access]
+        synonyms: [area, department, service line]
+
+      - name: INTERACTION_TYPE
+        expr: INTERACTION_TYPE
+        data_type: VARCHAR(30)
+        description: Channel of the interaction (meeting, call, chat, email, webinar …).
+        sample_values: [Meeting, Call, Chat, Webinar, Email]
+        synonyms:
+          - interaction type
+          - channel
+          - activity type
+        contra_search_service:
+          database: GPS_DWH_DB
+          schema:   RWS_DW
+          service:  INTERACTION_TYPES_SEARCH_SERVICE
+
+      - name: INTERACTION_CATEGORY
+        expr: INTERACTION_CATEGORY
+        data_type: VARCHAR(20)
+        description: Corporate-access vs non-corporate classification.
+        sample_values: [Corporate Access, Non-Corporate Access]
+        synonyms: [interaction class, category]
+
+      - name: INTERACTION_SUBJECT
+        expr: INTERACTION_SUBJECT
+        data_type: VARCHAR(2048)
+        description: Subject or topic discussed in the interaction.
+        sample_values: [Bloomberg chart, China macro updates]
+        synonyms: [subject, topic, purpose, call title]
+
+      - name: LIVE_TYPE
+        expr: LIVE_TYPE
+        data_type: VARCHAR(8)
+        description: Indicates Live vs Non-Live (pre-recorded / simulated).
+        sample_values: [Live, Non-Live]
+        synonyms: [live flag, live vs recorded]
+
+      - name: PHYSICAL_TYPE
+        expr: PHYSICAL_TYPE
+        data_type: VARCHAR(9)
+        description: Virtual vs In-Person indicator.
+        sample_values: [Virtual, In Person]
+        synonyms: [meeting mode, physical type]
+
+      - name: IS_PRIORITY_CONTACT
+        expr: IS_PRIORITY_CONTACT
+        data_type: VARCHAR(1)
+        description: Priority-contact flag (Y/N).
+        sample_values: [Y, N]
+        synonyms: [priority client flag, PC]
+
+      - name: EXT_CLIENT_CONTACT_KEY
+        expr: EXT_CLIENT_CONTACT_KEY
+        data_type: NUMBER(38,0)
+        description: Unique identifier of the external client contact.
+        synonyms: [client contact key]
+
+      - name: EMPLOYEE_KEY
+        expr: EMPLOYEE_KEY
+        data_type: NUMBER(38,0)
+        description: Unique identifier of the employee conducting the interaction.
+        synonyms: [employee id]
+
+      - name: TEAM_KEY
+        expr: TEAM_KEY
+        data_type: NUMBER(38,0)
+        description: Unique identifier of the team responsible for the interaction.
+        synonyms: [team id]
+
+      - name: CLIENT_TIER_HIST_KEY
+        expr: CLIENT_TIER_HIST_KEY
+        data_type: NUMBER(38,0)
+        description: History key tracking the client’s tier over time.
+        synonyms: [client tier key]
+
+    time_dimensions:
+      - name: INTERACTION_START_DATE
+        expr: INTERACTION_START_DATE
+        data_type: TIMESTAMP_NTZ(6)
+        description: UTC timestamp at which the interaction began.
+        helpers: [YEAR, QUARTER, MONTH, WEEK, DATE]
+        synonyms:
+          - interaction date
+          - meeting date
+          - start time
+
+    facts:
+      - name: IED_WEIGHTED_DURATION
+        expr: IED_WEIGHTED_DURATION
+        data_type: NUMBER(18,10)
+        description: Interaction-weighted duration in minutes.
+        default_aggregation: SUM
+        synonyms: [weighted duration]
+
+      - name: PRO_RATED_DURATION
+        expr: PRO_RATED_DURATION
+        data_type: NUMBER(18,10)
+        description: Pro-rated duration of the interaction in minutes.
+        default_aggregation: SUM
+        synonyms: [pro-rated duration]
+
+      # -------- Derived metrics ----------------------------------------
+      - name: INTERACTION_COUNT
+        expr: COUNT(DISTINCT INTERACTION_ID)
+        description: Number of interactions.
+        default_aggregation: NONE
+
+      - name: AVG_DURATION_MIN
+        expr: AVG(PRO_RATED_DURATION)
+        description: Average duration in minutes.
+        default_aggregation: NONE
+
+      - name: PRIORITY_CONTACT_INTERACTIONS
+        expr: COUNT_IF(IS_PRIORITY_CONTACT = 'Y')
+        description: Interactions with priority contacts.
+        default_aggregation: NONE
+
+      - name: UNIQUE_COMPANIES_TOUCHED
+        expr: COUNT(DISTINCT DERIVED_TICKER)
+        description: Unique companies contacted.
+        default_aggregation: NONE
+
+  # --------------------------------------------------------------------
+  - name: V_INTERACTION_TICKER_COMPANY
+    base_table:
+      database: GPS_DWH_DB
+      schema:   RWS_DW
+      table:    V_INTERACTION_TICKER_COMPANY
+    description: |
+      Snapshot that associates every interaction with its company
+      ticker, company name, and security description, joined to the
+      latest research / security master data.
+    primary_key:
+      columns: [DERIVED_TICKER, COMPANY_NAME, INTERACTION_ID]
+
+    dimensions:
+      - name: INTERACTION_ID
+        expr: INTERACTION_ID
+        data_type: VARCHAR(30)
+        description: Foreign-key back to the interaction.
+
+      - name: DERIVED_TICKER
+        expr: DERIVED_TICKER
+        data_type: VARCHAR(15)
+        description: Stock symbol (RIC) including market suffix.
+        sample_values: [MS.N, AON.N, LUNR.ST]
+        synonyms: [ticker, stock code, RIC]
+
+      - name: COMPANY_NAME
+        expr: COMPANY_NAME
+        data_type: VARCHAR(200)
+        description: Name of the company.
+        synonyms: [company, issuer, corporate name]
+        contra_search_service:
+          database: GPS_DWH_DB
+          schema:   RWS_DW
+          service:  COMPANY_NAME_SEARCH_SERVICE
+
+      - name: SECURITY_DESC
+        expr: SECURITY_DESC
+        data_type: VARCHAR(16777216)
+        description: Descriptive blurb of the security / company.
+        synonyms: [security description]
+
+    facts: []  # purely dimensional
+
+  # --------------------------------------------------------------------
+  - name: RMS_FACT_INTERACTIONS
+    base_table:
+      database: GPS_DWH_DB
+      schema:   RWS_DW
+      table:    RMS_FACT_INTERACTIONS
+    description: |
+      Granular fact table with operational metrics for each interaction;
+      used as the single source of truth for volume measures.
+    primary_key:
+      columns: [INTERACTION_ID]
+
+    dimensions:
+      - name: INTERACTION_ID
+        expr: INTERACTION_ID
+        data_type: VARCHAR(30)
+        description: Unique identifier of the interaction.
+        synonyms: [interaction key]
+
+    facts:
+      - name: INTERACTION_COUNT
+        expr: 1
+        data_type: NUMBER
+        description: Each row equals one interaction (SUM for totals).
+        default_aggregation: SUM
+
+# ----------------------------------------------------------------------
+relationships:
+  - name: interaction_to_ticker_company
+    join_type: inner
+    relationship_type: many_to_one
+    left_table:  V_INTERACTION_TICKER_COMPANY
+    right_table: RMS_FACT_INTERACTIONS
+    relationship_columns:
+      - left_column:  INTERACTION_ID
+        right_column: INTERACTION_ID
+
+  - name: global_interaction_to_fact_interaction
+    join_type: inner
+    relationship_type: many_to_one
+    left_table:  V_GLOBAL_INTERACTION
+    right_table: RMS_FACT_INTERACTIONS
+    relationship_columns:
+      - left_column:  INTERACTION_ID
+        right_column: INTERACTION_ID
+
+# ----------------------------------------------------------------------
+custom_instructions: |
+  - When the user mentions “year”, “per year”, or “FY”, apply YEAR()
+    to date columns.
+  - “This year” or “YTD” = from 1-Jan of the current year up to today.
+  - “Last quarter” = DATE_TRUNC('QUARTER',
+      DATEADD('QUARTER', -1, CURRENT_DATE)).
+  - For “tier 1-3” filter CLIENT_TIER_HIST_KEY between 1 and 3.
+  - When the user asks for “unique companies”, de-duplicate on DERIVED_TICKER.
+  - Use SUM for duration metrics unless the prompt requests “average”.
+
+verified_queries: []   # append your validated NL-to-SQL prompts here
