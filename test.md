@@ -1,29 +1,45 @@
-How many interactions did we have with each company name in 2023?
+Sure! Here's the full list of validation questions in **English**, grouped by purpose, to help test the relationship between `RMS_DIM_EMPLOYEE` and `V_GLOBAL_INTERACTION` in your semantic model.
 
-List the top-10 tickers by interaction count for Corporate Access meetings last quarter.
+---
 
-What is the average pro-rated duration (minutes) of live meetings with ticker “AAPL.O” year-to-date?
+### ✅ 1. Validate the Relationship Between `V_GLOBAL_INTERACTION` and `RMS_DIM_EMPLOYEE`
 
-Show a monthly trend of interactions in the Macro area, broken down by derived ticker, for the past 18 months.
+1. **How many interactions has each employee had?**
+2. **List the full names of employees with more than 10 interactions.**
+3. **Which employees have no recorded interactions?**
+4. **Which employees have participated in priority client interactions (`IS_PRIORITY_CONTACT = 'Y'`)?**
 
-For ticker “MS.N”, list every interaction subject where the priority-contact flag = ‘Y’ during Q1 2024.
+---
 
-Count the number of unique employees who engaged with each company in 2022.
+### ✅ 2. Validate Usage of `RMS_DIM_EMPLOYEE` Columns
 
-For each interaction type (meeting, call, webinar…), display the number of distinct companies touched this year.
+1. **What is the research area of the employees with the highest number of interactions?** (`RESEARCH_AREA`)
+2. **What officer titles are held by the employees with the most interactions?** (`OFFICER_LEVEL_TITLE_HIST`)
+3. **Which primary business units are involved in the most interactions?** (`PRIMARY_BUSINESS_UNIT_HIST`)
+4. **How many interactions were led by producer employees?** (`PRODUCER_EMP_FLAG`)
+5. **Which research roles are most frequently involved in interactions?** (`RESEARCH_ROLE`)
 
-Identify companies that had virtual interactions but no in-person meetings in 2023.
+---
 
-Which three companies logged the longest single interaction (by IED-weighted duration) since 2021?
+### ✅ 3. Validate Usage of `V_GLOBAL_INTERACTION` Columns
 
-Provide the total interaction duration per company for Tier 1 clients during the last six months.
+1. **What is the most common type of interaction?** (`INTERACTION_TYPE`)
+2. **Which interaction areas see the most activity?** (`INTERACTION_AREA`)
+3. **What percentage of interactions were in-person vs virtual?** (`PHYSICAL_TYPE`)
+4. **How many interactions were live vs pre-recorded or simulated?** (`LIVE_TYPE`)
+5. **What were the most discussed subjects during interactions?** (`INTERACTION_SUBJECT`)
+6. **How many interactions involved priority contacts?** (`IS_PRIORITY_CONTACT`)
 
-Show the split of live vs non-live interactions for each ticker in Q4 2023.
+---
 
-List all interactions linked to company name “Tesla Inc.” and show channel, subject, and employee key.
+### ✅ 4. Validate Synonyms and Natural Language Descriptions
 
-How many Corporate Access webinars did we hold for S&P 500 tickers this year? (assumes a ticker→index mapping is available)
+1. **Which employees had face-to-face meetings?** → `PHYSICAL_TYPE = 'In-person'`
+2. **Who participated in virtual meetings with priority clients?** → `PHYSICAL_TYPE = 'Virtual'`, `IS_PRIORITY_CONTACT = 'Y'`
+3. **Show me the analysts with the most live sessions.** → `LIVE_TYPE = 'Live'`
+4. **How many research producers had calls this year?**
+5. **Which teams interacted most with high-tier clients?** → requires `CLIENT_TIER_HIST_KEY`
 
-Find companies whose interaction count dropped by more than 50 % from 2022 to 2023.
+---
 
-For every interaction category, return the average number of distinct tickers contacted per month over the last two years.
+Would you like this exported as a CSV or document for validation purposes?
