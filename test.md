@@ -1,92 +1,45 @@
-from pathlib import Path
+Of course! Here's a polished and professional version of your suggested questions in English, ready to send to Snowflake engineers or support:
 
-# Create a Python script with a production-grade, observable version of ResearchDataAssistantWithObservability
-code = """
-from trulens.otel import instrument
-from trulens.otel.semconv.trace import SpanAttributes
-import logging
+---
 
-logger = logging.getLogger(__name__)
+## ✅ Context Summary
 
-class ResearchDataAssistantWithObservability:
+> “I’m building an interactive application (using Streamlit) that uses Cortex Analyst through a class instrumented with `TruLens`. My goal is to send traces to **Snowflake Cortex AI Observability**, but I also need to **capture and return the output (`response`) immediately** to display to the user. I understand that `TruApp.run()` is used for evaluations, but it doesn’t return the output, and `RunConfig` is designed for batch testing only.”
 
-    def __init__(self, semantic_models, host, api_endpoint, env_name, proxies):
-        self.semantic_models = semantic_models
-        self.host = host
-        self.api_endpoint = api_endpoint
-        self.env_name = env_name
-        self.proxies = proxies
+---
 
-    @instrument(span_type=SpanAttributes.SpanType.GENERATION)
-    def generate_sql(self, question: str) -> dict:
-        try:
-            response = query_cortex_analyst(
-                user_message=question,
-                semantic_models=self.semantic_models,
-                host=self.host,
-                api_endpoint=self.api_endpoint,
-                env_name=self.env_name,
-                proxies=self.proxies
-            )
+## 🔧 Questions for Snowflake Engineering
 
-            response_json = response.json()
-            logger.info(f"Received response from Cortex Analyst: {response_json}")
+### 🔍 Regarding real-time trace capture
 
-            content_items = response_json.get("message", {}).get("content", [])
-            sql_statement = None
-            verified_query_info = None
+1. **Is there a way to send individual traces from an instrumented function (`@instrument`) in real-time to Cortex AI Observability, without triggering a full `TruApp.run()` evaluation?**
 
-            for item in content_items:
-                if item.get("type") == "sql":
-                    sql_statement = item.get("statement")
-                    verified_query_info = item.get("confidence", {}).get("verified_query_used_", {})
+2. **Are there any plans to support trace logging from interactive applications (like frontend UIs or APIs) to Cortex Observability, outside of formal evaluation runs?**
 
-            return {
-                "sql": sql_statement,
-                "response_json": response_json,
-                "verified_query": verified_query_info
-            }
-        except Exception as e:
-            logger.error(f"Error in generate_sql: {e}")
-            return {"sql": None, "error": str(e), "response_json": {}}
+3. **What is the recommended approach to connect a single instrumented method (e.g., `answer_query()`) with Cortex Observability in a way that supports real-time trace recording without committing to a full evaluation run?**
 
-    @instrument(span_type=SpanAttributes.SpanType.INVOCATION)
-    def execute_sql(self, sql: str) -> tuple[str, bool]:
-        if not sql:
-            logger.warning("No SQL to execute.")
-            return "-- No SQL provided", False
-        try:
-            df_response = get_query_exec_result(sql)
-            return str(df_response), True
-        except Exception as e:
-            logger.error(f"SQL execution failed: {e}")
-            return str(e), False
+---
 
-    @instrument(span_type=SpanAttributes.SpanType.RECORD_ROOT,
-                attributes={
-                    SpanAttributes.RECORD_ROOT.INPUT: "question",
-                    SpanAttributes.RECORD_ROOT.OUTPUT: "return"
-                })
-    def answer_query(self, question: str) -> dict:
-        logger.info(f"Processing question: {question}")
+### ⚙️ On TruApp usage and output access
 
-        result_gen = self.generate_sql(question)
-        sql = result_gen.get("sql")
-        verified_query = result_gen.get("verified_query")
-        response_json = result_gen.get("response_json")
+4. **Is there any way to retrieve the actual output (`response`) from an evaluation triggered via `TruApp.run()` in Python, or is the output exclusively stored in Snowflake for offline analysis?**
 
-        result_exec, success = self.execute_sql(sql)
+5. **Can we tag a trace or run with external metadata such as a `session_id`, `user_id`, or `trace_id` to later identify the matching record from Snowflake via SQL or Observability UI?**
 
-        return {
-            "question": question,
-            "sql": sql,
-            "sql_execution_success": success,
-            "query_result": result_exec,
-            "verified_query": verified_query,
-            "cortex_response": response_json
-        }
-"""
+---
 
-path = Path("/mnt/data/assistant_observable_sql_app.py")
-path.write_text(code)
-path
+### 📡 Regarding backend or API trace ingestion
+
+6. **Is there an official API or telemetry endpoint to send traces or spans directly to Cortex Observability from backend services, bypassing `TruApp.run()`?**
+
+7. **What is the recommended architecture for backend or API-based LLM applications that need to both return the result immediately and persist the trace for auditability in Snowflake Cortex Observability?**
+
+---
+
+### 💡 Open-ended design feedback
+
+8. **What are the current best practices for interactive GenAI applications that need both real-time results (to return to users) and complete trace observability (for monitoring and governance)?**
+
+---
+
+Let me know if you'd like me to help format these into a formal email, GitHub issue, or support case.
