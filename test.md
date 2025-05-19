@@ -1,5 +1,9 @@
-Do you have an example or recommended approach for using Snowflake Cortex AI Observability with Cortex Analyst or Cortex Agents from an interactive application such as Streamlit?
+Right now, the process to access and work with data is slow and inefficient.
 
-We’ve read the documentation, but it focuses on batch evaluations using TruApp.run(). In our case, we need to capture traces from a real-time user interface and still send them to Observability for monitoring and auditability.
+First, many business users can’t easily get the data they need because they don’t fully understand the data schema or know SQL.
 
-Is it currently possible to emit traces from individual LLM agent calls (e.g., answer_query()) without a full evaluation run? If so, could you share a pattern, example, or best practice for this type of use case?
+Second, existing BI dashboards are often outdated, static, and don’t allow for the flexibility users need to explore data freely.
+
+And third, because of this, data teams spend a lot of time answering repetitive, ad hoc questions — time that could be better spent on high-impact analytics.
+
+Cortex Analyst aims to change that."
