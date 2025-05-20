@@ -1,9 +1,27 @@
-Right now, the process to access and work with data is slow and inefficient.
+Cortex Analyst – Challenges and Next Steps
 
-First, many business users can’t easily get the data they need because they don’t fully understand the data schema or know SQL.
+Challenges
 
-Second, existing BI dashboards are often outdated, static, and don’t allow for the flexibility users need to explore data freely.
+Interprets same question differently on subsequent runs. May also return different columns in result.
 
-And third, because of this, data teams spend a lot of time answering repetitive, ad hoc questions — time that could be better spent on high-impact analytics.
+In some cases, the Cortex Analyst makes assumptions if there is ambiguity; in other cases, asks for more information. Should strictly ask for more information if there is ambiguity
 
-Cortex Analyst aims to change that."
+Non-Determinism / Ambiguity
+
+Learnings / Potential Mitigations
+
+Can partly be improved via metadata and custom instructions.
+
+For an API client (HR CRM use case), can pre-process user question to strictly define expected columns. May need to use the completions API to pre-process question (query expansion) prior to calling Cortex Analyst.
+
+User question may be arbitrary and don’t want to provide the wrong answer. May need to define “golden questions” that the Analyst can answer which can regression tested for each release and built upon.
+
+Invalid SQL
+
+Syntax errors in generated SQL – wrong/missing aliases, selecting fields from tables where they don’t exist
+
+Next Steps
+
+Add more metadata; expand to medium complexity and difficult questions
+
+Work with Snowflake to integrate the Cortex Search service into Analyst
