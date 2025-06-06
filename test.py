@@ -4,50 +4,77 @@ from datetime import datetime
 import random
 import hashlib
 
-# -----------------------------
-# Configurable parameters
-# -----------------------------
+# ----------------------------------------
+# CONFIGURATION
+# ----------------------------------------
 RUNS_PER_QUESTION = 5
-DATASET_VERSION = "v1"  # Useful for tracking which data snapshot was used
+DATASET_VERSION = "v1"
 
-# -----------------------------
-# Simulated Cortex Analyst response and resultset
-# -----------------------------
-def simulate_sql_execution(sql_text: str) -> list:
-    """Simulates SQL execution and returns a consistent mock resultset"""
-    base_rows = [
+# ----------------------------------------
+# UTILITY: Normalize and hash a DataFrame
+# ----------------------------------------
+def normalize_and_hash_dataframe(df1: pd.DataFrame, df2: pd.DataFrame) -> tuple:
+    """
+    Takes two DataFrames and:
+    - Identifies union of all columns
+    - Adds missing columns as None
+    - Normalizes and sorts rows
+    - Returns both hashes and warning if any columns are missing
+    """
+    all_columns = sorted(set(df1.columns).union(set(df2.columns)))
+
+    # Fill missing columns
+    for col in all_columns:
+        if col not in df1.columns:
+            df1[col] = None
+        if col not in df2.columns:
+            df2[col] = None
+
+    df1 = df1[all_columns]
+    df2 = df2[all_columns]
+
+    def hash_df(df):
+        df = df.applymap(lambda x: str(round(x, 2)) if isinstance(x, float) else str(x))
+        df = df.sort_values(by=all_columns).reset_index(drop=True)
+        return hashlib.sha256(df.to_csv(index=False).encode()).hexdigest()
+
+    return hash_df(df1), hash_df(df2)
+
+# ----------------------------------------
+# SIMULATED Cortex + SQL response
+# ----------------------------------------
+def simulate_sql_execution(sql_text: str) -> pd.DataFrame:
+    """Returns a simulated resultset as a DataFrame"""
+    base = [
         {"company_name": "A", "total": 100},
         {"company_name": "B", "total": 80},
         {"company_name": "C", "total": 60}
     ]
+    # Occasionally remove or add a column to simulate model variability
     if "WITH" in sql_text:
-        base_rows[-1]["total"] += 1  # Minor tweak to simulate slight differences
-    return base_rows
-
-def compute_result_hash(rows: list) -> str:
-    """Computes a hash of the query resultset to compare semantic equality"""
-    hasher = hashlib.sha256()
-    for row in sorted(rows, key=lambda r: str(r)):
-        row_string = "|".join(str(v) for v in row.values())
-        hasher.update(row_string.encode("utf-8"))
-    return hasher.hexdigest()
+        for row in base:
+            row.pop("total", None)  # simulate missing column
+    if "NULL" in sql_text:
+        for row in base:
+            row["region"] = "North"  # simulate extra column
+    return pd.DataFrame(base)
 
 def simulate_cortex_response(question: str, run_id: str) -> dict:
     interpretations = [
-        "This is our interpretation of your question: Top 7 companies with the most interactions, excluding unspecified companies",
-        "We interpreted your request as retrieving the top 7 companies by total number of interactions",
-        "Fetching top 7 companies by interactions, excluding NULL or unspecified companies"
+        "Top 7 companies with most interactions, excluding unspecified",
+        "Top interacting companies excluding nulls",
+        "Companies ranked by number of interactions"
     ]
     sql_variants = [
         "SELECT company_name, COUNT(*) AS total FROM fct_interactions WHERE company_name <> 'UNSPECIFIED' GROUP BY 1 ORDER BY 2 DESC LIMIT 7",
-        "WITH clean_data AS (SELECT * FROM fct_interactions WHERE company_name <> 'UNSPECIFIED') SELECT company_name, COUNT(*) AS total FROM clean_data GROUP BY 1 ORDER BY 2 DESC LIMIT 7",
+        "WITH clean AS (SELECT * FROM fct_interactions WHERE company_name <> 'UNSPECIFIED') SELECT company_name FROM clean GROUP BY 1 ORDER BY COUNT(*) DESC LIMIT 7",
         "SELECT company_name, COUNT(*) total FROM fct_interactions WHERE company_name IS NOT NULL AND company_name != 'UNSPECIFIED' GROUP BY company_name ORDER BY total DESC LIMIT 7"
     ]
+
     used_verified_query = random.choice([True, False])
     interpretation = random.choice(interpretations)
     sql_statement = random.choice(sql_variants)
-    result_rows = simulate_sql_execution(sql_statement)
-    result_hash = compute_result_hash(result_rows)
+    result_df = simulate_sql_execution(sql_statement)
 
     return {
         "run_id": run_id,
@@ -57,49 +84,47 @@ def simulate_cortex_response(question: str, run_id: str) -> dict:
         "interpretation": interpretation,
         "sql_statement": sql_statement,
         "used_verified_query": used_verified_query,
-        "result_hash": result_hash,
+        "result_df": result_df,
         "request_id": str(uuid.uuid4())
     }
 
-# -----------------------------
-# List of questions to evaluate
-# -----------------------------
+# ----------------------------------------
+# TEST SETUP: Questions and execution
+# ----------------------------------------
 questions = [
     "Top 7 companies with the most interactions",
     "How many interactions did each employee have?"
 ]
 
-# -----------------------------
-# Execute the evaluation
-# -----------------------------
-all_results = []
+# Run Cortex multiple times per question
+executions = []
 for q in questions:
     for i in range(RUNS_PER_QUESTION):
         run_id = f"{q[:20]}_{i+1}"
-        all_results.append(simulate_cortex_response(q, run_id))
+        executions.append(simulate_cortex_response(q, run_id))
 
-df = pd.DataFrame(all_results)
+# Build full table
+rows = []
+for i in range(len(executions)):
+    current = executions[i]
+    for j in range(i + 1, len(executions)):
+        if executions[j]["question"] != current["question"]:
+            continue
+        hash1, hash2 = normalize_and_hash_dataframe(current["result_df"], executions[j]["result_df"])
+        consistent = hash1 == hash2
 
-# -----------------------------
-# Semantic metrics summary
-# -----------------------------
-summary = (
-    df.groupby("question")
-    .agg(
-        total_runs=('run_id', 'count'),
-        distinct_sqls=('sql_statement', 'nunique'),
-        distinct_result_hashes=('result_hash', 'nunique'),
-        verified_query_uses=('used_verified_query', 'sum')
-    )
-    .assign(
-        verified_use_rate=lambda x: round(x["verified_query_uses"] / x["total_runs"] * 100, 1),
-        is_semantically_consistent=lambda x: x["distinct_result_hashes"] == 1
-    )
-    .reset_index()
-)
+        rows.append({
+            "question": current["question"],
+            "run_id_1": current["run_id"],
+            "run_id_2": executions[j]["run_id"],
+            "hash_1": hash1,
+            "hash_2": hash2,
+            "is_semantically_consistent": consistent
+        })
 
-# -----------------------------
-# Display results
-# -----------------------------
-import ace_tools as tools; tools.display_dataframe_to_user(name="Raw Analyst Results with Hashes", dataframe=df)
-tools.display_dataframe_to_user(name="Semantic Summary per Question", dataframe=summary)
+# ----------------------------------------
+# Display final report
+# ----------------------------------------
+comparison_df = pd.DataFrame(rows)
+
+import ace_tools as tools; tools.display_dataframe_to_user(name="Pairwise Semantic Consistency Report", dataframe=comparison_df)
