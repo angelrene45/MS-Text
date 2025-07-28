@@ -25,4 +25,41 @@ The process of calibrating the semantic model involves a **cyclical, iterative w
 
 ## 🧪 Key Learnings from the Text-to-SQL POC
 
-![Snowflake Cortex Analyst POC](attachment:361bfb65-4cdd-)
+![Snowflake Cortex Analyst POC](attachment:361bfb65-4cdd-4869-932c-f0805c02cb7a.png)
+
+### ✔️ What Worked Well:
+- Easy prototyping of semantic models using Cortex Analyst tools.
+- Good coverage across CRM and vendor datasets (Visible Alpha, LinkUp, etc.).
+- Literal grounding using **Cortex Search** improved the relevance of model responses.
+- Flexible architecture to maintain **multiple semantic models** per data domain.
+- Integration with **Trulens** provided visibility and observability into model responses.
+
+---
+
+## 💡 Best Practices for Semantic Model Development
+
+1. **Start Small, Iterate Quickly**  
+   Begin with a single data domain and iterate through the calibration loop rapidly.
+
+2. **Partner with Domain SMEs**  
+   Collaborate closely with subject matter experts to ensure accurate model language.
+
+3. **Schema Simplification**  
+   Create simplified views or logical models that abstract complexity for the analyst.
+
+4. **Test with Real User Questions**  
+   Use production-style queries and questions during calibration, not just synthetic ones.
+
+5. **Validate with SQL Experts**  
+   Every generated SQL should be reviewed and validated for accuracy and performance.
+
+6. **Document Assumptions**  
+   Keep clear documentation of metric definitions, table mappings, and vocabulary.
+
+7. **Monitor via Trulens or Custom Logs**  
+   Observability helps you fine-tune the model and detect drifts or misalignments.
+
+---
+
+## 🚀 Next Steps
+We are continuing to onboard new datasets and refine our instructions using learnings from this POC. Our goal is to empower users with reliable, explainable self-service analytics powered by natural language and Snowflake.
