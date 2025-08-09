@@ -3,43 +3,43 @@
 !includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
 !includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
-' Personas
-Person(dev, "app developer", "application developer")
-Person(user, "enduser2")
+' People
+Person(dev, "App Developer", "Application developer")
+Person(user, "End User")
 
-' Sistemas auxiliares (CI/CD y despliegue)
+' External systems (CI/CD and deployment)
 System_Ext(train, "Train", "CI/CD train job")
 System_Ext(lift, "LIFT", "Deploying images and packages")
-System_Ext(webstack2, "webstack2", "1) IAM/EIM validation\n2) CLM, LB, OIDC provision, etc.\n3) Application deploy")
+System_Ext(webstack2, "Webstack2", "1) IAM/EIM validation\n2) CLM, LB, OIDC provision, etc.\n3) Application deployment")
 System_Ext(lbv3, "LBv3", "Load Balancer")
 
-' Plataforma de ejecución (Treadmill/MKS -> cell/namespace -> pod)
+' Execution platform (Treadmill/MKS -> cell/namespace -> pod)
 Boundary(treadmill, "Treadmill/MKS") {
-  Boundary(cell, "cell / namespace") {
-    Boundary(pod, "treadmill_instance / pod") {
+  Boundary(cell, "Cell / Namespace") {
+    Boundary(pod, "Treadmill Instance / Pod") {
       Container(reverse, "httpd ADC", "httpd", "OIDC & ILS enforced (reverse proxy)")
       Container(app, "Application Image", "Spring Boot / Flask / .NET Core", "App container")
     }
   }
 }
 
-' Base de datos
-ContainerDb(db, "database", "EC-supported DB", "Authenticated & authorized access")
+' Database
+ContainerDb(db, "Database", "EC-supported DB", "Authenticated & authorized access")
 
-' Relaciones (flujo de imágenes y despliegue)
-Rel(dev, train, "curate image")
-Rel(train, lift, "promote image")
-Rel(lift, pod, "pull image", "image")
-Rel(webstack2, pod, "deploy", "automation")
+' Relationships (image and deployment flow)
+Rel(dev, train, "Curate image")
+Rel(train, lift, "Promote image")
+Rel(lift, pod, "Pull image", "Image")
+Rel(webstack2, pod, "Deploy", "Automation")
 
-' Tráfico de usuarios
-Rel(user, lbv3, "https")
-Rel(lbv3, reverse, "https")
-Rel(reverse, app, "proxy")
-Rel(app, db, "read/write", "authenticated")
+' User traffic
+Rel(user, lbv3, "HTTPS")
+Rel(lbv3, reverse, "HTTPS")
+Rel(reverse, app, "Proxy")
+Rel(app, db, "Read/Write", "Authenticated")
 
 ' Extras (provisioning / policies)
-Rel(webstack2, lift, "package publish/approve")
+Rel(webstack2, lift, "Package publish/approve")
 Rel(webstack2, reverse, "OIDC / LB config")
 
 SHOW_LEGEND()
