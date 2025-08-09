@@ -11,20 +11,26 @@ Person(user, "End User")
 System_Ext(train, "Train", "CI/CD train job")
 System_Ext(lift, "LIFT", "Deploying images and packages")
 System_Ext(webstack2, "Webstack2", "1) IAM/EIM validation\n2) CLM, LB, OIDC provision, etc.\n3) Application deployment")
-System_Ext(lbv3, "LBv3", "Load Balancer")
 
-' Execution platform (Treadmill/MKS -> cell/namespace -> pod)
-Boundary(treadmill, "Treadmill/MKS") {
-  Boundary(cell, "Cell / Namespace") {
-    Boundary(pod, "Treadmill Instance / Pod") {
-      Container(reverse, "httpd ADC", "httpd", "OIDC & ILS enforced (reverse proxy)")
-      Container(app, "Application Image", "Spring Boot / Flask / .NET Core", "App container")
+' Main System: Application Runtime
+System_Boundary(runtime, "Application Runtime") {
+  
+  ' Entry point for users
+  Container(lbv3, "LBv3", "Load Balancer", "Routes HTTPS traffic to the pod")
+
+  ' Execution platform
+  Boundary(treadmill, "Treadmill/MKS") {
+    Boundary(cell, "Cell / Namespace") {
+      Boundary(pod, "Treadmill Instance / Pod") {
+        Container(reverse, "httpd ADC", "httpd", "OIDC & ILS enforced (reverse proxy)")
+        Container(app, "Spring Boot / Flask / .NET Core", "Application Image", "App container")
+      }
     }
   }
-}
 
-' Database
-ContainerDb(db, "Database", "EC-supported DB", "Authenticated & authorized access")
+  ' Database
+  ContainerDb(db, "Database", "EC-supported DB", "Authenticated & authorized access")
+}
 
 ' Relationships (image and deployment flow)
 Rel(dev, train, "Curate image")
