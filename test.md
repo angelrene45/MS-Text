@@ -1,27 +1,96 @@
 # ADR 001 – Frontend Integration Choice with AskAI
 
-**Date:** YYYY-MM-DD  
 **Status:** Accepted  
+**Date:** YYYY-MM-DD  
+**Review Level:** Department / Platform Architecture Board  
+**Decision Makers:** [List of accountable & responsible stakeholders]  
+**Consulted:** AskAI Team Lead, Platform Security Lead, Product Owner
 
-## Context
-The initial plan was to build a user interface (UI) using **Streamlit** as a proof of concept to interact with our Python-based backend and the **Cortex Analyst API**.  
-While this approach gave us full control over the UI, it also implied extra development and maintenance work.
+---
 
-## Decision
-Integrate with the **AskAI** service — an agent framework acting as a marketplace that already provides a conversational UI.  
-Our backend will be registered as an agent and expose endpoints via **OpenAPI** specifications.
+## Context & Problem Statement
+The initial plan was to build a custom user interface (UI) using **Streamlit** as a proof of concept to connect to our Python-based backend and the **Cortex Analyst API**.  
+However, maintaining an in-house UI would increase development overhead, require dedicated UI resources, and duplicate capabilities already available in **AskAI** — a corporate conversational UI maintained by another department.
 
-## Rationale
-- **Reduced development and maintenance effort**: No need to build and maintain our own UI.  
-- **Standards and compatibility**: AskAI supports OpenAPI, making integration straightforward.  
-- **Backend focus**: Allows us to prioritize backend improvements and semantic model quality.  
-- **Cross-team alignment**: AskAI is maintained by another department, reducing UI operational load.
+AskAI is part of a **strategic agentic frameworks marketplace** initiative in which multiple departments (including Research) will expose their models as agents.  
+The platform will allow end users to select and enable agents from a list, making it a centralized entry point for AI-powered capabilities across the company.
+
+**Objectives:**
+- Provide business users with a conversational interface to query semantic models.
+- Minimize UI development and maintenance within our team.
+- Ensure compatibility with the corporate agentic frameworks marketplace.
+- Integrate into a unified platform where users can discover and select available agents.
+
+---
+
+## Decision Drivers
+- **Strategic alignment:** Leverage the corporate agentic frameworks marketplace.
+- **Business priority:** Deliver functional UI access with minimal delay.
+- **Technical priority:** Standardized OpenAPI integration with agent registration.
+- **Security:** Maintain authentication/authorization via OIDC.
+- **Scalability:** UI managed by a dedicated team, capable of onboarding multiple agents.
+- **Maintainability:** Reduce UI code maintenance in our backlog.
+
+Cross-functional requirements:
+- High availability of the UI (managed externally).
+- Compatibility with our API release cycles.
+- Alignment with corporate UI/UX and agent lifecycle standards.
+
+---
+
+## Considered Options
+
+### Option 1 – Build Custom UI (Streamlit)
+**Pros:**
+- Full control over UI/UX design.
+- Ability to rapidly prototype and customize.
+**Cons:**
+- Additional development and maintenance workload.
+- Requires UI skillset in our team.
+- No integration with the corporate agent marketplace.
+
+### Option 2 – Integrate with AskAI (**Selected**)
+**Pros:**
+- No UI development or maintenance required internally.
+- AskAI supports OpenAPI and agent registration in the corporate marketplace.
+- Managed by another department with existing support.
+- Aligns with strategic vision for a unified agentic platform.
+**Cons:**
+- Dependence on another team’s release cycles and roadmap.
+- Limited control over UI/UX changes.
+
+---
+
+## Decision Outcome
+We will integrate with **AskAI** as the frontend interface, registering our backend as an agent and exposing endpoints via OpenAPI.  
+This allows us to focus on backend functionality and semantic model quality while leveraging an existing, supported UI within the company-wide agent marketplace.
+
+---
 
 ## Consequences
-- The UI will not be developed internally; we depend on AskAI for user-facing presentation.  
-- Any API change must comply with OpenAPI specifications to maintain compatibility.  
-- The final user experience will depend on AskAI’s capabilities and roadmap.  
-- Requires close coordination with the AskAI team for versioning, deployments, and testing.
+- **Positive:** Reduced development effort, faster delivery, standard integration, strategic alignment with the marketplace initiative.
+- **Negative:** Dependency on AskAI team for UI updates and fixes.
+- **Reversibility:** Moderate — could switch to custom UI if AskAI no longer meets needs, but would require significant development effort.
+- **Impact:** Requires ongoing coordination with AskAI for testing, deployment, API versioning, and agent lifecycle in the marketplace.
+
+---
+
+## Supporting Documents
+- C4 Context Diagram – `high-level-architecture-askai.puml`
+- API OpenAPI Specification – `openapi.yaml`
+- Corporate Agent Marketplace Overview – [link or document reference]
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -32,113 +101,77 @@ Our backend will be registered as an agent and expose endpoints via **OpenAPI** 
 
 # ADR 002 – Deployment Stack Choice: WebstaX vs Podman/Treadmill
 
-**Date:** YYYY-MM-DD  
 **Status:** Accepted  
+**Date:** YYYY-MM-DD  
+**Review Level:** Department / Platform Architecture Board  
+**Decision Makers:** [List of accountable & responsible stakeholders]  
+**Consulted:** Platform Deployment Team, DevOps Lead, Security Architect
 
-## Context
-For the backend (FastAPI Wrapper API) deployment, we evaluated two main options:
+---
 
-1. **Manual stack**: Podman + UpLIFT + Treadmill + Load Balancer + CLM — greater control and flexibility, but requires more manual configuration.  
-2. **WebstaX**: Integrated solution recommended by the platform team, automating CLM, LB, OIDC provisioning, deployment into Treadmill, and TAM validation.
+## Context & Problem Statement
+For deploying our FastAPI Wrapper API to production, we considered two viable approaches:  
+1. **Manual stack** — Podman + UpLIFT + Treadmill + Load Balancer + CLM.  
+2. **WebstaX** — Platform-recommended deployment stack that automates provisioning and deployment.
 
-Both options are compatible with our CI/CD pipeline (Train + UpLIFT) and support container execution in Treadmill.
+**Objectives:**
+- Ensure secure, repeatable, and compliant deployments.
+- Reduce manual configuration errors.
+- Align with platform team’s recommended and supported tooling.
 
-## Decision
-Adopt **WebstaX** as the production deployment stack while keeping our image build and packaging flow in Train + UpLIFT.
+---
 
-## Rationale
-- **Official recommendation from the platform team** with dedicated support.  
-- **Full automation** of LB, certificate, OIDC provisioning, and deployment — reducing manual errors.  
-- **Integrated TAM validation** ensuring compliance with corporate standards.  
-- **Faster production deployments** and reduced operational burden.
+## Decision Drivers
+- **Platform alignment:** Using officially supported tooling reduces integration risk.
+- **Automation:** Minimize manual provisioning (LB, CLM, OIDC).
+- **Compliance:** TAM validation and corporate security standards enforced.
+- **Operational efficiency:** Faster deployments, less operational overhead.
+
+Cross-functional requirements:
+- High availability and scalability.
+- Integration with CI/CD (Train + UpLIFT).
+- Secure TLS termination and OIDC authentication.
+- Auditability of deployments.
+
+---
+
+## Considered Options
+
+### Option 1 – Manual Stack (Podman + UpLIFT + Treadmill + LB + CLM)
+**Pros:**
+- Greater flexibility for non-standard configurations.
+- Full control over deployment pipeline.
+**Cons:**
+- Higher manual effort and risk of misconfiguration.
+- Requires deeper platform expertise in the team.
+- Slower deployment turnaround.
+
+### Option 2 – WebstaX (**Selected**)
+**Pros:**
+- Fully automated provisioning and deployment.
+- Enforces TAM validation and compliance.
+- Supported by platform team.
+**Cons:**
+- Less flexibility for special configurations.
+- Dependency on WebstaX team’s release cycles.
+
+---
+
+## Decision Outcome
+We will adopt **WebstaX** for production deployments while keeping our CI/CD image build in Train + UpLIFT.  
+This ensures automation, compliance, and reduces operational overhead.
+
+---
 
 ## Consequences
-- Less flexibility for non-standard configurations not supported by WebstaX.  
-- Dependency on WebstaX team’s roadmap and support timelines.  
-- Any special requirements outside the standard config must be coordinated with the platform team.  
-- Easier scaling and reproducibility of environments thanks to automation.
+- **Positive:** Faster deployments, reduced errors, compliance guaranteed.
+- **Negative:** Limited ability to deviate from standard configuration.
+- **Reversibility:** Low complexity — can revert to manual stack if needed, but would require additional platform configuration.
+- **Impact:** Requires collaboration with WebstaX team for deployment scheduling and special requirements.
 
+---
 
+## Supporting Documents
+- C4 Container Diagram – `application-runtime-deployment.puml`
+- Deployment Pipeline Diagram – `ci-cd-flow.puml`
 
-
-
-
-
-
-
-@startuml C4_Context
-!include <c4/C4.puml>
-!include <c4/C4_Context.puml>
-
-Person(user, "End User", "Asks natural language questions")
-System_Ext(askai, "AskAI (Frontend)", "Conversational UI maintained by another department")
-System_Boundary(yoursys, "Your System – Semantic Answers") {
-  System(api, "Wrapper API (FastAPI)", "Exposes /semantic/* via OpenAPI; applies OIDC, guardrails, and observability")
-}
-System_Ext(snow, "Snowflake + Cortex Analyst", "Generates and executes SQL over semantic models")
-System_Ext(idp, "OIDC IdP/SSO", "Issues and validates JWT")
-System_Ext(obs, "Observability (Trulens + APM/Logs)", "Traces and evaluates responses")
-
-Rel(user, askai, "Natural language questions")
-Rel(askai, api, "HTTPS / OpenAPI", "JWT (OIDC)")
-Rel(api, snow, "REST (Cortex Analyst) / SQL indirectly")
-Rel(api, idp, "AuthN/AuthZ", "OIDC/JWT")
-Rel(api, obs, "Traces + evaluations", "OTel/TruLens")
-@enduml
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-@startuml C4_Containers
-!include <c4/C4.puml>
-!include <c4/C4_Container.puml>
-
-Person(user, "End User")
-System_Ext(askai, "AskAI", "External frontend")
-
-System_Boundary(runtime, "Application Runtime") {
-  Container(lb, "LBv3", "Load Balancer", "TLS/DNS; routes to Treadmill")
-  Container_Boundary(treadmill, "Treadmill") {
-    Container_Boundary(cell, "Cell / Namespace") {
-      Container(adc, "httpd ADC", "Reverse proxy", "OIDC + ILS enforced")
-      Container(api1, "Wrapper API", "FastAPI container", "Gunicorn/Uvicorn; /semantic/*")
-      Container(api2, "Wrapper API (replica)", "FastAPI container", "HPA/auto-scale")
-    }
-  }
-  Rel(lb, adc, "HTTPS")
-  Rel(adc, api1, "proxy")
-  Rel(adc, api2, "proxy")
-}
-
-System_Ext(snow, "Snowflake + Cortex Analyst", "Semantic models + SQL execution")
-System_Ext(idp, "OIDC IdP", "SSO/JWT")
-System_Ext(obs, "Trulens + APM/Logs", "Evaluations and traces")
-
-Rel(askai, lb, "HTTPS/OpenAPI", "JWT (OIDC)")
-Rel(api1, snow, "REST (Cortex Analyst)")
-Rel(api1, idp, "Validate tokens / scopes")
-Rel(api1, obs, "Traces/Evals")
-Rel(api2, snow, "REST")
-Rel(api2, idp, "OIDC")
-Rel(api2, obs, "Traces/Evals")
-
-System_Ext(train, "Train (CI/CD)", "Build/test jobs")
-System_Ext(uplift, "UpLIFT", "Image/package registry")
-System_Ext(webstax, "WebstaX", "TAM + CLM + LB/OIDC provisioning + Deployment")
-
-Rel(train, uplift, "Promote image")
-Rel(uplift, api1, "Pull image")
-Rel(uplift, api2, "Pull image")
-Rel(webstax, cell, "Deploy/Provision")
-Rel(user, askai, "Uses UI")
-@enduml
