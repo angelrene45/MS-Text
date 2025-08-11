@@ -1,108 +1,186 @@
-# ADR-004: Observability Approach for Semantic Models Wrapper API
+# Prod Go-Live & Architecture Design – Semantic Models Wrapper API
 
-**Status:** Draft  
 **Date:** 2025-08-10  
-**Review Level:** Department (Architecture + Observability Teams)  
-**Decision Makers:** [Your Name] (Developer / Technical Lead), [Observability Lead], [Data Platform Lead]  
-**Consulted:** Runway Team, Platform Observability Team, Research Department  
+**Audience:** Architecture Review Board, Observability Team, Runway Team, Research Dept.
 
 ---
 
-## Context & Problem Statement
+## 1. Executive Summary
 
-The Semantic Models Wrapper API requires observability and evaluation capabilities to track:
-- API request/response traces (latency, metadata, SQL queries)
-- Evaluation metrics (faithfulness, groundedness, semantic similarity)
-- End-user feedback
+The Semantic Models Wrapper API enables business users to query governed Snowflake semantic models using natural language, via **Cortex Analyst**, without writing SQL.  
+Integration with **AskAI** provides a marketplace-based UI for model access, allowing users to enable our agent from a list.
 
-**Current Dev Setup:**  
-We use **TruLens Dashboard** (Streamlit app) integrated with our API. It stores traces, evaluations, and feedback in **Snowflake tables** automatically created by the dashboard.
-
-**Production Constraints:**
-1. **Authentication:** TruLens Dashboard only supports password-based Snowflake authentication. Corporate policy requires keypair or OIDC — passwords are prohibited.
-2. **Table Creation:** In production, only **Runway** provisioning pipelines can create Snowflake objects. TruLens dashboard's dynamic table creation is non-compliant.
-3. **Deployment:** TruLens dashboard (Streamlit) cannot be deployed in our controlled production runtime without significant changes.
-
-These constraints require us to decide on an **observability approach** that works in both Dev and Prod, meeting compliance and operational requirements.
+**Goals:**
+- Natural language → SQL → governed datasets.
+- Secure, compliant, observable.
+- Production-grade deployment with rollback.
 
 ---
 
-## Decision Drivers
+## 2. Problem & Business Goals
 
-- **Compliance:** Must use approved authentication methods (keypair/OIDC).  
-- **Governance:** No self-created Snowflake tables in production.  
-- **Integration:** Prefer alignment with corporate observability stack (OTEL, Tiempo, Cortex, Grafana).  
-- **Developer productivity:** Minimal additional overhead for evaluations in Dev.  
-- **User experience:** Ability to visualize metrics and traces easily.
+**Current challenges:**
+- Users rely on BI backlog; no self-service for ad-hoc questions.
+- Lack of natural language interface for semantic models.
+- UI development would delay delivery.
 
----
-
-## Considered Options
-
-### Option A – TruLens Dashboard (Current Dev Approach)
-Use TruLens' built-in Streamlit dashboard and Snowflake storage.
-
-**Pros:**
-- Immediate, out-of-the-box visualization.
-- No custom dashboard work required.
-- Tight integration with TruLens evaluations.
-
-**Cons:**
-- Non-compliant authentication method.
-- Self-creates Snowflake tables (not allowed in Prod).
-- Cannot be deployed in Prod without significant rework.
-- Dependent on Streamlit runtime (unsupported in Prod).
+**Objectives:**
+- Expose semantic models via secure API.
+- Integrate with AskAI (corporate agent marketplace) as frontend.
+- Meet compliance on auth, governance, and observability.
 
 ---
 
-### Option B – TruLens with OTEL Integration → Corporate Observability
-Configure TruLens to send metrics and traces via **OpenTelemetry (OTEL)** to the corporate OTEL collector. Store data in Tiempo/Cortex and visualize via Grafana.
+## 3. High-Level Architecture (C4 Level 1)
 
-**Pros:**
-- Fully compliant with firm authentication and provisioning policies.
-- Uses existing observability stack and Grafana dashboards.
-- Unified view of API and infrastructure metrics.
-- No Snowflake table creation from the API.
+![High Level with AskAI](../diagrams/high-level-askai.png)
 
-**Cons:**
-- Requires engineering effort to configure OTEL exporter.
-- Custom Grafana dashboard development needed.
-- Schema alignment with corporate OTEL required.
+**Flow:**
+1. User selects our agent in AskAI marketplace.
+2. AskAI sends request to Wrapper API via OpenAPI spec.
+3. Wrapper API invokes Cortex Analyst → Snowflake.
+4. Response returned to AskAI for UI display.
 
 ---
 
-## Pros and Cons of the Options
+## 4. Application Runtime & Deployment (C4 Level 2)
 
-| Option | Pros | Cons |
-|--------|------|------|
-| **A – TruLens Dashboard** | Quick setup, native integration | Non-compliant, table creation issues, unsupported deployment |
-| **B – TruLens + OTEL** | Compliant, integrates with existing stack, scalable | More setup effort, requires dashboard development |
+![Application Runtime Deployment](../diagrams/application-runtime.png)
 
----
-
-## Decision Outcome
-
-**Chosen Option:** **B – TruLens with OTEL Integration**  
-We will:
-- Keep **Option A** for Dev/QA to leverage TruLens’ native dashboard for quick feedback loops.
-- For **Production**, configure TruLens to send data to OTEL, store it in Tiempo/Cortex, and create Grafana dashboards.
-- Coordinate with Runway and Observability teams for provisioning and schema alignment.
+**Deployment:**
+- Load Balancer → ADC → Treadmill pods (FastAPI).
+- CI/CD via Train + UpLIFT + WebstaX.
+- OIDC-based authentication.
+- Observability via OTEL → Tiempo/Cortex.
 
 ---
 
-## Consequences
+## 5. Wrapper API Components (C4 Level 3)
 
-- **Positive:** Compliance with authentication and provisioning policies; integration with approved observability tools; single pane of glass for monitoring API and models.  
-- **Negative:** Additional upfront engineering work to configure OTEL exporters and develop dashboards.  
-- **Follow-ups:**  
-  - Engage Runway for Snowflake provisioning in Dev/QA.  
-  - Work with Observability team to define OTEL metric schema.  
-  - Schedule Grafana dashboard build.
+![Wrapper Components](../diagrams/wrapper-components.png)
+
+**Key endpoints:**
+- `/semantic/{model}/ask`
+- `/metadata/*`
+- `/sql/execute` (optional)
+
+**Guardrails:**
+- Schema allowlist
+- Role-based filters
+- Prompt injection prevention
 
 ---
 
-## Supporting Documents
+## 6. Integration with AskAI
 
-- [TruLens OTEL Integration Docs](https://www.trulens.org)  
-- [Corporate Observability Standards](/link/to/internal/standards)  
-- [Runway Provisioning Guidelines](/link/to/internal/runway-docs)  
+**Why AskAI:**
+- Existing corporate framework for agent discovery.
+- No need to build UI.
+- OpenAPI compatibility.
+
+**Usage:**
+- Register our API as agent.
+- Users enable agent from list.
+- Requests flow via AskAI → Wrapper API.
+
+---
+
+## 7. Security & Compliance
+
+- **AuthN/Z:** OIDC/JWT at ADC + API.
+- **Snowflake Access:** Keypair authentication, CLS/RLS, masking.
+- **Network:** TLS end-to-end, CLM.
+- **Governance:** Only Runway can create Snowflake objects in Prod.
+
+---
+
+## 8. Observability & Quality (ADR-004)
+
+**Dev/QA:** TruLens dashboard (fast feedback).  
+**Prod:** TruLens → OTEL → Tiempo/Cortex → Grafana.
+
+Metrics tracked:
+- Latency (p50, p95)
+- Error rates
+- Evaluation metrics (relevance, groundedness)
+- Cost/session
+
+---
+
+## 9. Performance & Cost Controls
+
+- Snowflake warehouse autosuspend/resume.
+- Pagination & query limits.
+- Resource monitors & alerts.
+- Cache metadata.
+
+---
+
+## 10. Go-Live Plan
+
+**T-14 to T-7:**  
+- Freeze semantic models.
+- Performance & load testing.
+- Security review.
+
+**T-7 to T-2:**  
+- Canary deploy in pre-prod.
+- Runbook validation.
+
+**T-0:**  
+- Rollout: 5% → 25% → 100% traffic.
+- Live monitoring of KPIs.
+
+**Rollback:**  
+- Feature flag disable.
+- Deploy previous image.
+
+---
+
+## 11. Go-Live Gates
+
+- p95 latency ≤ 3s
+- Error rate ≤ 2%
+- Answer relevance ≥ 0.75
+- Compliance approvals complete
+- Observability configured
+
+---
+
+## 12. RACI
+
+| Area | Role | Name |
+|------|------|------|
+| Product Owner | A | [Name] |
+| Architecture | A | [Name] |
+| Backend/API | R | [Name] |
+| Data/Semantic | R | [Name] |
+| AskAI Integration | C/R | [Name] |
+| Platform/Observability | C | [Name] |
+| Security | C | [Name] |
+
+---
+
+## 13. Risks & Mitigations
+
+| ID | Risk | Mitigation |
+|----|------|------------|
+| R1 | OTEL config delays | Pairing with Obs team, pre-prod POC |
+| R2 | Snowflake cost spikes | Limits, monitors, pagination |
+| R3 | Prompt injection | Guardrails, allowlist |
+| R4 | OIDC misconfig | WebstaX templates + security tests |
+| R5 | Semantic drift | Golden prompt regression tests |
+
+---
+
+## Appendix: ADR-004 (Observability Decision)
+
+**Decision:**  
+- Dev/QA: TruLens dashboard with Snowflake tables.  
+- Prod: TruLens with OTEL exporter to Tiempo/Cortex, dashboards in Grafana.
+
+**Reasoning:**
+- Compliance with auth and provisioning rules.
+- Integration with corporate observability stack.
+- Unified monitoring for API and models.
+
