@@ -1,74 +1,47 @@
-# Production Go Live Plan & Architecture Design
+1. Key contributions and business results for this year (Performance & Impact)
 
-## 1. Code Management & DevSecOps
-**Technologies:** GitHub, Jenkins Pipelines, SonarQube, Snyk, MkDocs Material  
-**Description:**  
-- Centralized source code management in GitHub.  
-- CI/CD automation using Jenkins, including build, test, and controlled deployments.  
-- Integration with SonarQube and Snyk to ensure code quality and security.  
-- Project documentation maintained with MkDocs Material.  
+This year, I drove the modernization of the organization’s data platform, delivering scalable, efficient, and secure data operations across Snowflake and Databricks. As principal architect of the in-house ingestion and transformation framework, TransformIt, I enabled faster time-to-market, improved observability, and ensured a future-ready infrastructure.
 
----
+Additionally, I designed and deployed a conversational self-service analytics platform powered by AI/ML, Snowflake Cortex, Agentic AI, and advanced Text-to-SQL capabilities. This empowered business users with real-time natural language insights, driving adoption of data-driven decision-making across the organization.
 
-## 2. DevOps & Deployment
-**Technologies:** WebstaX (TAM, CLM, LoadBalancer), Podman, UpLIFT, Treadmill  
-**Description:**  
-- Backend containerization with Podman.  
-- Image publishing to UpLIFT.  
-- Deployment on Treadmill with load balancing and SSL certificates managed by CLM.  
-- WebstaX recommended by the platform team for streamlined environment management.  
+Key Achievements:
 
----
+TransformIt – Modular Python ELT Framework: Architected and implemented a Python library for scalable ELT workflows into Snowflake, with CI/CD pipelines, OpenTelemetry observability, and automated testing.
 
-## 3. Automated Testing & Evaluation
-**Technologies:** TruLens  
-**Description:**  
-- Automated evaluations on each build or pull request.  
-- Metrics include: Final Answer Relevance, Interpretation Accuracy, SQL Relevance, Summarization Groundedness.  
-- Thresholds set to detect improvements or regressions per version.  
-- Integration with CI/CD pipelines for continuous quality validation.  
+Data Engineering Optimization: Enhanced Python and Shell-based data extraction pipelines, integrated SonarQube and Snyk for quality and security, and delivered comprehensive technical documentation.
 
----
+GenAI Data Research Assistant: Delivered a conversational analytics solution leveraging Snowflake Cortex Analyst and semantic search, deployed in containers with observability via Trulens and OpenTelemetry.
 
-## 4. Backend API
-**Technologies:** FastAPI, Snowflake Cortex Analyst  
-**Description:**  
-- Backend built with FastAPI, exposing REST APIs on top of Cortex Analyst.  
-- Secure Snowflake connection using key pair authentication.  
-- Automatic API documentation via OpenAPI/Swagger.  
-- Access control through OIDC and corporate LDAP group validation.  
+Hygiene & Modernization Efforts: Led critical upgrades including EOL Docker migrations, Snowflake keys rotation, and Snowflake migration from BCS to VPS, ensuring modernization, compliance, and continuity of operations.
 
----
+These efforts significantly improved platform scalability, strengthened security posture, and positioned the organization to maximize the value of generative AI across the data lifecycle.
 
-## 5. Frontend & User Experience
-**Technologies:** AskAI (primary option), Streamlit (POC alternative)  
-**Description:**  
-- Integration with AskAI agent marketplace to register backend as an OpenAPI agent.  
-- Conversational interface for end users, allowing them to enable or disable models from a list.  
-- For development or demo purposes, a Streamlit UI can be used as an alternative.  
+2. Role in upholding the Firm’s conduct, compliance, and risk management policies (Risk & Controls)
 
----
+I embedded compliance and risk-awareness into every project by ensuring security-first design and proactive modernization of infrastructure. Key actions included:
 
-## 6. Observability
-**Technologies:** TruLens Dashboard (Dev/QA), OpenTelemetry + Grafana (Prod)  
-**Description:**  
-- In Dev/QA, TruLens Dashboard is used to visualize evaluation scores and traces in real time.  
-- In Prod, metrics and traces sent to an OpenTelemetry collector, stored in approved systems (Tiempo, Cortex) and visualized in Grafana dashboards.  
-- Monitoring latency, errors, usage, and estimated costs for operational and financial tracking.  
+Implementing Snowflake keys rotation to enhance data security and ensure regulatory compliance.
 
----
+Managing Docker end-of-life migrations, reducing operational risk and ensuring continuity with supported and secure containers.
 
-## 7. Data Platform
-**Technologies:** Snowflake, Cortex Analyst  
-**Description:**  
-- Semantic models managed and versioned in Snowflake Runway.  
-- Security policies including Row-Level Security (RLS), Column-Level Security (CLS), and data masking.  
-- Use of tags and resource monitors for cost control.  
+Migrating Snowflake from BCS to VPS, strengthening resilience, performance, and cost efficiency.
 
----
+Integrating SonarQube and Snyk into development pipelines, proactively identifying vulnerabilities and ensuring secure coding practices.
 
-## 8. Rollout & Deployment Strategy
-**Approach:**  
-- Gradual rollout (canary release), starting with a small percentage of traffic before full adoption.  
-- Fast rollback controls using previous backend image versions.  
-- Pre-production validation with real data and scenarios before go-live.  
+By combining modernization with governance best practices, I reinforced the Firm’s ability to operate securely and sustainably at scale.
+
+3. Demonstrating the Firm’s values through contributions and actions (Culture & Values)
+
+I contributed to a culture of innovation and excellence by championing modern platforms and making them accessible to a wide range of users. Through the rollout of TransformIt and GenAI-powered analytics, I empowered colleagues to derive value from data in a secure, responsible way.
+
+I also supported team knowledge growth by mentoring peers on Snowflake Cortex, container best practices, and observability patterns. By addressing hygiene items (keys rotation, Docker EOL, platform migration), I demonstrated responsibility and accountability — ensuring the Firm’s technology stack remains both innovative and resilient.
+
+These contributions reflect the Firm’s values of integrity, innovation, and collaboration, as I consistently worked to deliver solutions that balance business agility with governance standards.
+
+4. Skills or areas of expertise to develop next year (Professional Development)
+
+Looking ahead, I plan to strengthen two key areas:
+
+Advanced Generative AI Integration – Deepen expertise in applying GenAI to structured and unstructured enterprise data, particularly reinforcement learning with human feedback (RLHF) and responsible AI frameworks, ensuring solutions remain ethical, accurate, and compliant.
+
+Leadership in Data Strategy – Expand my role in shaping enterprise-wide data strategy, aligning technical modernization efforts with business outcomes, and driving adoption of AI/ML at scale. This includes developing stronger executive communication skills to translate complex solutions into clear business value.
