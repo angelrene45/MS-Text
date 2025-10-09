@@ -1,11 +1,7 @@
-Risk & Controls
-
-He has set high standards for compliance and governance, ensuring that our team follows Firm-approved processes and tools. For instance, when addressing platform migrations and security enhancements (e.g., Snowflake key rotation and Docker EOL migrations), he reinforced the importance of risk awareness and guided us to implement sustainable, compliant solutions.
-
-Culture & Values
-
-My manager is a role model for accountability, integrity, and respect. He fosters an inclusive environment where all team members feel encouraged to share their perspectives. For example, during cross-functional meetings, he actively invited contributions from different voices and ensured that diverse opinions were considered in the decision-making process.
-
-Manager Effectiveness
-
-He has been an outstanding coach in my career, providing actionable feedback and guidance that helped me grow both technically and strategically. For example, he encouraged me to take ownership of high-visibility initiatives such as TransformIt and the Generative AI POC, while also coaching me on how to communicate outcomes effectively to senior stakeholders. His mentorship has been instrumental in building my confidence and expanding my impact within the Firm.
+| **Part**                   | **Example**                                                          | **Impact on Accuracy** | **What It Does**                                                                          |
+| -------------------------- | -------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------- |
+| **Metadata**               | `name: Customer Orders Model`<br>`description: Tracks order history` | 🎯                     | Helps route questions to the right model, especially when you have many.                  |
+| **Tables & Relationships** | `tables/dimensions:`<br>`Relationships:`                             | 🎯🎯                   | Ensures valid joins, filters, and aggregations without hallucination.                     |
+| **Search Services**        | `search_services:`<br>`- dimension: customer_name`                   | 🎯🎯🎯                 | Enables fuzzy matching for values like names or venues.                                   |
+| **Custom Instructions**    | `custom_instructions: Q1 starts on February 2nd every year`          | 🎯🎯                   | Adds business rules clarifying information and idiosyncratic SQL.                         |
+| **Verified Queries**       | `verified_queries:`<br>`- question:`<br>`- sql:`                     | 🎯🎯🎯                 | Shows correct SQL for real questions. Trains the model to answer similar ones accurately. |
