@@ -1,22 +1,11 @@
-This slide explains the anatomy of a semantic model — essentially, what components make it up and how each one contributes to accuracy and performance.
+Title: My First SHPE Experience with Morgan Stanley: Connecting, Learning, and Sharing
 
-A semantic model connects business language to data, so the AI understands exactly what we mean when we ask a question.
+This year’s SHPE Conference marked Morgan Stanley’s second time participating — but for me, it was my very first experience. The event took place in Philadelphia, and it was an unforgettable three-day journey filled with learning, connection, and pride.
 
-Let’s walk through the main parts:
+We arrived on Thursday for registration, where we picked up our SHPE t-shirt and hoodie. That first day was all about meeting people — and one of the most meaningful parts was connecting with other Hispanic colleagues from Morgan Stanley. Talking with them and hearing about their past SHPE experiences helped me understand how to make the most out of the following days. It immediately made me feel part of something bigger — a community that celebrates culture, talent, and growth.
 
-First, Metadata.
-This defines the model’s name and description — it helps route questions to the right dataset, especially when multiple models exist.
+On Friday, I had my first shift at the Morgan Stanley booth — the very last one of the day. It was an amazing experience talking to students who lined up to speak with us. We discussed their studies, reviewed their résumés, and shared insights about our culture and opportunities. I was impressed by how well-prepared, motivated, and competitive the students were. You could feel their effort and ambition in every conversation. Many even wanted to stay in touch, asking for my LinkedIn to continue connecting after the event — something that truly made me happy.
 
-Next, Tables and Relationships.
-These define the structure — the dimensions and how they’re connected. This ensures valid joins, filters, and aggregations without hallucinations or mismatched data.
+Saturday was my busiest day. I had two shifts, including an extra one I volunteered for because I genuinely enjoyed being part of the experience. It was rewarding to meet even more students and contribute to the positive energy around the booth. Each conversation reminded me of how valuable it is to connect with the next generation of professionals and support their growth.
 
-Search Services come next.
-They enable fuzzy matching for values like customer names or venues, helping the AI interpret natural language queries more effectively.
-
-Custom Instructions add business-specific rules — for example, defining that “Q1 starts on February 2nd.”
-This helps clarify exceptions and unique SQL logic.
-
-And finally, Verified Queries.
-These are real-world questions with validated SQL. They train the model to answer similar questions accurately in the future.
-
-Overall, these components work together to make the AI smarter, more precise, and more aligned with the organization’s data and language.
+Overall, my first SHPE experience was truly memorable. It reminded me of the importance of spaces that bring students and professionals together to inspire and empower each other. I left Philadelphia grateful, inspired, and proud to represent Morgan Stanley — and already looking forward to next year.
