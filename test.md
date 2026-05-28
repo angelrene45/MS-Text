@@ -1,52 +1,234 @@
-Prescindir de LangGraph y manejar la orquestación directamente con Python en Snowflake es una excelente decisión para mantener la arquitectura simple y reducir dependencias. En este caso, el "Grafo" se reemplaza por un bucle (`loop`) clásico de control de flujo en Python.
+# Recommended Architecture for High-Accuracy Chart Extraction from PDFs
 
-Aquí tienes los pasos técnicos estructurados y en inglés, listos para que se los envíes a tu compañero:
+## Best Approach
+
+The best results usually come from a hybrid pipeline that combines:
+
+* multimodal LLM extraction,
+* deterministic validation,
+* visual comparison,
+* and targeted retries.
+
+The key idea is:
+
+> Do not rely only on the LLM confidence score.
+> Combine structured validation + visual validation + LLM judging.
 
 ---
 
-### **Architecture: Image-to-JSON Validation Loop (Python + Snowflake)**
+# Recommended Pipeline
 
-**Objective:** Extract structured data from PDF charts using a visual-semantic validation loop, comparing the original image directly against the extracted JSON without generating intermediate Matplotlib charts.
+## 1. Render PDFs in High Quality
 
-**Prerequisites:** Python environment integrated with Snowflake (using Snowflake Cortex or External Network Access for API calls to Claude 3 Opus and GPT-4/5).
+* Render PDF pages at 300–600 DPI.
+* Detect and crop chart regions individually.
+* Store:
 
-#### **Step 1: Initialize the Processing Loop**
+  * original page image,
+  * chart crop,
+  * metadata.
 
-Instead of a complex orchestration framework, wrap the logic in a standard Python `for` or `while` loop to handle the retries per image.
+This improves extraction quality significantly, especially for small or blurry charts.
 
-* Define a maximum retry limit (e.g., `MAX_RETRIES = 3`).
-* Initialize state variables: `attempt = 0`, `confidence_score = 0`, and `feedback_history = ""`.
+---
 
-#### **Step 2: Data Extraction (Claude 3 Opus)**
+## 2. Image Preprocessing
 
-Use the Snowflake complete function to call the Opus model.
+Before sending charts to the extraction model:
 
-* **Input:** Send the cropped chart image from the PDF.
-* **Dynamic Prompting:** * If `attempt == 0`, ask Opus to extract the chart data into a strict JSON format.
-* If `attempt > 0`, inject the `feedback_history` into the prompt. Instruct Opus to correct its previous JSON based specifically on the judge's feedback.
+* denoise,
+* sharpen,
+* improve contrast,
+* deskew,
+* optional upscaling for low-resolution charts.
 
+This step alone can reduce many extraction errors.
 
+---
 
-#### **Step 3: Validation / LLM-as-a-Judge (GPT-4/5)**
+## 3. Extract Chart → Structured JSON
 
-Once Opus returns the JSON, immediately validate it using GPT.
+Use a multimodal model (Claude Opus / GPT / other vision model) to extract a strict structured format.
 
-* **Input:** Send the **Original Image** AND the **Extracted JSON** from Opus.
-* **Prompt Instruction:** Instruct GPT to act as a strict data auditor. It must cross-reference the provided JSON against the visual data in the image (checking axes, labels, and sampling 3-5 data points).
-* **Required Output:** Force GPT to return a JSON object containing exactly two keys:
-1. `confidence_score` (integer from 0 to 100).
-2. `feedback` (a concise string detailing any discrepancies, or an empty string if perfect).
+Example:
 
+```json
+{
+  "chart_type": "line_chart",
+  "title": "Revenue Growth",
+  "x_axis": ["Q1", "Q2", "Q3"],
+  "y_axis_range": [0, 100],
+  "series": [
+    {
+      "name": "Revenue",
+      "points": [
+        {"x": "Q1", "y": 40},
+        {"x": "Q2", "y": 55}
+      ]
+    }
+  ]
+}
+```
 
+The output should always be deterministic and schema-validated.
 
-#### **Step 4: Routing & Conditional Logic**
+---
 
-Parse the response from the Judge model and determine the next action using standard `if/else` statements:
+## 4. Recreate the Chart with Matplotlib
 
-* **Condition A (Success):** If `confidence_score >= 80` $\rightarrow$ Break the loop. Save the approved JSON data into the final Snowflake table.
-* **Condition B (Retry):** If `confidence_score < 80` and `attempt < MAX_RETRIES` $\rightarrow$ Append the new `feedback` to `feedback_history`, increment the `attempt` counter, and continue the loop back to Step 2.
-* **Condition C (Failure/Human Review):** If the loop reaches `MAX_RETRIES` without hitting the 80% threshold $\rightarrow$ Break the loop. Insert the best available JSON into the database but flag the row (e.g., `requires_human_review = TRUE`) for manual inspection.
+Generate a new chart image from the extracted JSON.
 
-#### **Implementation Note for Low-Quality Images:**
+This becomes the normalized representation of what the model understood.
 
-Before entering this loop, consider applying a quick image preprocessing step in Python (using `OpenCV` or `Pillow`) to increase the contrast or sharpen the edges of the PDF charts. This reduces the failure rate on the very first Opus extraction.
+---
+
+## 5. Dual Validation Strategy
+
+### A. Structured Validation (Most Important)
+
+Validate the extracted JSON programmatically:
+
+* chart type consistency,
+* axis ranges,
+* labels,
+* missing series,
+* invalid values,
+* duplicate points,
+* percentage totals,
+* scale consistency,
+* stacked/grouped correctness.
+
+This is usually more reliable than pure visual comparison.
+
+---
+
+### B. Visual Validation
+
+Compare:
+
+* original chart crop
+  vs
+* matplotlib recreated chart.
+
+This helps detect:
+
+* swapped axes,
+* incorrect legends,
+* missing visual elements,
+* wrong scaling,
+* incorrect grouping,
+* layout interpretation issues.
+
+---
+
+## 6. LLM-as-Judge
+
+The judge model should receive:
+
+* original chart crop,
+* recreated chart image,
+* extracted JSON,
+* metadata/checklist.
+
+The judge should return:
+
+```json
+{
+  "score": 0.87,
+  "passed": true,
+  "errors": [
+    "Y-axis scale appears incorrect",
+    "One series may be missing"
+  ],
+  "retry_instructions": [
+    "Re-read the legend",
+    "Verify Y-axis tick labels"
+  ]
+}
+```
+
+The judge should explain errors, not only provide a confidence score.
+
+---
+
+## 7. Targeted Retry Loop
+
+Retry only the failing components.
+
+Examples:
+
+* re-read Y-axis,
+* re-detect legend,
+* verify missing series,
+* reprocess low-confidence OCR areas.
+
+Recommended:
+
+* maximum 2–3 retries per chart.
+
+Avoid infinite retry loops.
+
+---
+
+## 8. Human Review Fallback
+
+If the chart still scores below threshold after retries:
+
+* send to human review,
+* or mark as low-confidence extraction.
+
+This prevents silent bad data.
+
+---
+
+# Recommended Confidence Strategy
+
+Do not trust raw LLM confidence alone.
+
+Instead, compute a combined score:
+
+```text
+Final Score =
+40% structured validation
+25% visual similarity
+20% multi-model agreement
+15% LLM judge evaluation
+```
+
+This is usually much more stable than relying on a single model score.
+
+---
+
+# Should We Use LangGraph?
+
+LangGraph is optional.
+
+Recommended if you need:
+
+* retries,
+* branching workflows,
+* state persistence,
+* auditability,
+* orchestration between models,
+* human review flows.
+
+Not necessary for a simple linear pipeline.
+
+For advanced production workflows, LangGraph can help manage the graph/state architecture cleanly.
+
+---
+
+# Final Recommendation
+
+The highest-quality approach is:
+
+1. High-quality chart crops
+2. Structured JSON extraction
+3. Matplotlib recreation
+4. Programmatic validation
+5. Visual comparison
+6. LLM judge
+7. Targeted retries
+8. Human fallback for low-confidence cases
+
+This hybrid strategy usually produces significantly better results than using only a single multimodal extraction model.
